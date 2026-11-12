@@ -73,7 +73,12 @@ function failed(method: string, path: string, status: number): Error {
 }
 
 /** POST to www.migros.ch and return the JSON. Throws on a non-2xx answer. */
-export async function postMigros(post: Post, path: string, body: unknown, headers: Record<string, string>): Promise<unknown> {
+export async function postMigros(
+  post: Post,
+  path: string,
+  body: unknown,
+  headers: Record<string, string>
+): Promise<unknown> {
   const r = await post(`${MIGROS_BASE}${path}`, body, headers);
   if (r.status < 200 || r.status >= 300) throw failed("POST", path, r.status);
   return r.data;

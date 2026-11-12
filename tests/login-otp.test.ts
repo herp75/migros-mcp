@@ -6,7 +6,7 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { otpCodeFor, totpFromSecret, FreshCodeRequiredError } from "../src/auth/login.js";
+import { findError, otpCodeFor, totpFromSecret, FreshCodeRequiredError } from "../src/auth/login.js";
 
 // RFC 6238 appendix B: the ASCII secret "12345678901234567890", base32-encoded.
 const RFC_SECRET = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ";
@@ -26,7 +26,7 @@ describe("totpFromSecret", () => {
   it("rejects a secret with characters outside base32, without quoting the secret", () => {
     assert.throws(
       () => totpFromSecret("NOT-BASE32!", 59),
-      (e: Error) => /not a valid setup key/.test(e.message) && !e.message.includes("!"),
+      (e: Error) => /not a valid setup key/.test(e.message) && !e.message.includes("!")
     );
   });
 });
@@ -52,5 +52,22 @@ describe("otpCodeFor", () => {
   it("rejects a passed code that isn't six digits", () => {
     assert.throws(() => otpCodeFor({ ...creds, totpCode: "12345" }), /exactly six digits/);
     assert.throws(() => otpCodeFor({ ...creds, totpCode: "12345a" }), /exactly six digits/);
+  });
+});
+
+describe("findError", () => {
+  const page = (inner: string) => `<div class="info-message-error"><div>${inner}</div></div>`;
+
+  it("returns the login page's error as plain text", () => {
+    assert.equal(findError(page("Wrong <b>password</b>.\n Try again")), "Wrong password. Try again");
+  });
+
+  it("leaves no angle brackets, even from nested or broken tags", () => {
+    const out = findError(page("a <scr<script>ipt>alert(1) b")) ?? "";
+    assert.ok(!/[<>]/.test(out), out);
+  });
+
+  it("returns null when the page shows no error", () => {
+    assert.equal(findError("<html></html>"), null);
   });
 });

@@ -28,7 +28,9 @@ describe("formatCumulusProfile", () => {
   });
 
   it("copes with a missing owner and no Famigros membership", () => {
-    const out = JSON.parse(formatCumulusProfile({ cumulusNumber: "1", periodToDatePointsBalance: 0, memberships: ["CUMULUS"] }));
+    const out = JSON.parse(
+      formatCumulusProfile({ cumulusNumber: "1", periodToDatePointsBalance: 0, memberships: ["CUMULUS"] })
+    );
     assert.equal(out.cardholder, undefined);
     assert.equal(out.isFamigrosMember, false);
     assert.equal(out.pointsBalance, 0);
@@ -55,7 +57,7 @@ describe("getCumulusStatus", () => {
     const out = JSON.parse(
       await getCumulusStatus(async () => {
         throw new Error(`GET ${CUMULUS_PROFILE_PATH} -> 404: {"status":404,"error":"Not Found"}`);
-      }),
+      })
     );
     assert.equal(out.hasCumulus, false);
   });
@@ -65,7 +67,7 @@ describe("getCumulusStatus", () => {
       getCumulusStatus(async () => {
         throw new Error(`GET ${CUMULUS_PROFILE_PATH} -> 500: oops`);
       }),
-      /-> 500/,
+      /-> 500/
     );
   });
 });

@@ -58,8 +58,7 @@ describe("parseRetryAfter", () => {
     // 60 seconds from now
     const future = new Date(Date.now() + 60_000).toUTCString();
     const result = parseRetryAfter(future);
-    assert.ok(result !== null && result >= 58 && result <= 62,
-      "expected ~60 s, got " + result);
+    assert.ok(result !== null && result >= 58 && result <= 62, "expected ~60 s, got " + result);
   });
 
   it("clamps a past HTTP-date to 0 (retry immediately)", () => {
@@ -160,7 +159,7 @@ describe("setRateLimited / clearRateLimit", () => {
     // Should be roughly before + 30000
     assert.ok(
       s.rateLimitedUntil! >= before + 29_000 && s.rateLimitedUntil! <= after + 31_000,
-      "rateLimitedUntil: " + s.rateLimitedUntil + " before: " + before + " after: " + after,
+      "rateLimitedUntil: " + s.rateLimitedUntil + " before: " + before + " after: " + after
     );
     assert.equal(s.rateLimitReason, "test 429");
   });
@@ -172,9 +171,7 @@ describe("setRateLimited / clearRateLimit", () => {
     const after = Date.now();
 
     assert.ok(typeof s.rateLimitedUntil === "number");
-    assert.ok(
-      s.rateLimitedUntil! >= before + 29_000 && s.rateLimitedUntil! <= after + 31_000,
-    );
+    assert.ok(s.rateLimitedUntil! >= before + 29_000 && s.rateLimitedUntil! <= after + 31_000);
   });
 
   it("clearRateLimit removes all cooldown fields", () => {

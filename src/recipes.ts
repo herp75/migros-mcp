@@ -412,7 +412,9 @@ export function parseMigustoRecipePage(html: string, pageUrl?: string): MigustoR
     recipeCategory: recipe.recipeCategory,
     recipeCuisine: recipe.recipeCuisine,
     recipeYield: recipe.recipeYield,
-    recipeIngredients: Array.isArray(ingredients) ? ingredients.filter((i): i is string => typeof i === "string") : undefined,
+    recipeIngredients: Array.isArray(ingredients)
+      ? ingredients.filter((i): i is string => typeof i === "string")
+      : undefined,
     recipeInstructions: stepTexts(recipe.recipeInstructions),
     nutrition: nutritionOf(recipe.nutrition),
     datePublished: published,

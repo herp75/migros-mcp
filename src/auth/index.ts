@@ -14,7 +14,7 @@ export { silentOAuth, fullLogin };
 
 /**
  * Returns a usable access token, doing whatever is needed:
- *   1. Use the cached JWT if it's still valid (with a 5 min buffer).
+ *   1. Use the cached JWT if it's still valid (with a 5 min buffer).
  *   2. Else run silent OAuth using cached SSO cookies.
  *   3. Else fall back to a full credentialed login (email → password → TOTP).
  *
@@ -137,7 +137,8 @@ async function getJwtNow(creds: Credentials | undefined, opts: GetJwtOptions): P
       throw new Error(
         "no cached session and no credentials provided. " +
           "Set MIGROS_EMAIL and MIGROS_PASSWORD to enable login. If the account has 2FA, also set " +
-          "MIGROS_TOTP_SECRET, or call authenticate with the current six-digit code."
+          "MIGROS_TOTP_SECRET, or call authenticate with the current six-digit code.",
+        { cause: e }
       );
     }
   }

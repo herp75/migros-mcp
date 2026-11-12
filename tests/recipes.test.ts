@@ -107,7 +107,10 @@ function listPage(cards: unknown[], total = 223): string {
 
 describe("recipe search request", () => {
   it("puts query and ingredients into one search text", () => {
-    assert.equal(recipeSearchTerm({ query: " risotto ", ingredients: ["Pilze", " ", "Thymian"] }), "risotto Pilze Thymian");
+    assert.equal(
+      recipeSearchTerm({ query: " risotto ", ingredients: ["Pilze", " ", "Thymian"] }),
+      "risotto Pilze Thymian"
+    );
     assert.equal(recipeSearchTerm({ ingredients: ["Kürbis"] }), "Kürbis");
     assert.equal(recipeSearchTerm({}), "");
     assert.equal(recipeSearchTerm({ query: "x".repeat(500) }).length, 200);
@@ -115,7 +118,10 @@ describe("recipe search request", () => {
 
   it("builds the list page address for each language", () => {
     assert.equal(recipeOverviewUrl("risotto", "de"), "https://migusto.migros.ch/de/rezept-uebersicht?q=risotto");
-    assert.equal(recipeOverviewUrl("pâtes à la crème", "fr", 2), "https://migusto.migros.ch/fr/apercu-des-recettes?q=p%C3%A2tes+%C3%A0+la+cr%C3%A8me&page=2");
+    assert.equal(
+      recipeOverviewUrl("pâtes à la crème", "fr", 2),
+      "https://migusto.migros.ch/fr/apercu-des-recettes?q=p%C3%A2tes+%C3%A0+la+cr%C3%A8me&page=2"
+    );
     assert.equal(recipeOverviewUrl("", "it", 5), "https://migusto.migros.ch/it/panoramica-delle-ricette?page=5");
     assert.equal(recipeOverviewUrl("a&page=9", "de"), "https://migusto.migros.ch/de/rezept-uebersicht?q=a%26page%3D9");
   });
@@ -148,12 +154,18 @@ describe("recipe search request", () => {
   it("skips cards that aren't recipes", () => {
     const story = { ...card(3), target: { type: "STORY", story: { id: "9" } } };
     const found = recipesFromOverviewPage(listPage([card(1), story]), "de");
-    assert.deepEqual(found?.recipes.map((r) => r.id), ["1001"]);
+    assert.deepEqual(
+      found?.recipes.map((r) => r.id),
+      ["1001"]
+    );
   });
 
   it("returns null for a page without a recipe list", () => {
     assert.equal(recipesFromOverviewPage("<html><body>Wartung</body></html>", "de"), null);
-    assert.equal(recipesFromOverviewPage('<script>self.__next_f.push([1,"\\"initialRecipeData\\":nope"])</script>', "de"), null);
+    assert.equal(
+      recipesFromOverviewPage('<script>self.__next_f.push([1,"\\"initialRecipeData\\":nope"])</script>', "de"),
+      null
+    );
   });
 
   it("gets the right page from Migusto and cuts out offset..offset+limit, without a token", async () => {
@@ -164,7 +176,10 @@ describe("recipe search request", () => {
     assert.equal(calls[0].url, "https://migusto.migros.ch/de/rezept-uebersicht?q=risotto&page=2");
     assert.equal(calls[0].headers.leshopch, undefined);
     assert.equal(result.total, 223);
-    assert.deepEqual(result.recipes.map((r) => r.id), ["1030", "1031", "1032", "1033", "1034"]);
+    assert.deepEqual(
+      result.recipes.map((r) => r.id),
+      ["1030", "1031", "1032", "1033", "1034"]
+    );
   });
 
   it("counts from the page's first recipe after page 3", async () => {
@@ -172,7 +187,10 @@ describe("recipe search request", () => {
     const { get, calls } = fakeGet({ status: 200, data: listPage(cards) });
     const result = await searchRecipesRequest({ query: "risotto", offset: 100, limit: 2 }, "de", get);
     assert.equal(calls[0].url, "https://migusto.migros.ch/de/rezept-uebersicht?q=risotto&page=5");
-    assert.deepEqual(result.recipes.map((r) => r.id), ["1100", "1101"]);
+    assert.deepEqual(
+      result.recipes.map((r) => r.id),
+      ["1100", "1101"]
+    );
   });
 
   it("throws on an error status or a page it can't read", async () => {
@@ -213,9 +231,15 @@ describe("recipe search answer", () => {
   });
 
   it("reads the slug from a recipe address and fills in image sizes", () => {
-    assert.equal(slugFromRecipeUrl("https://migusto.migros.ch/de/rezepte/marroni-aus-dem-ofen/39632?x=1"), "marroni-aus-dem-ofen");
+    assert.equal(
+      slugFromRecipeUrl("https://migusto.migros.ch/de/rezepte/marroni-aus-dem-ofen/39632?x=1"),
+      "marroni-aus-dem-ofen"
+    );
     assert.equal(slugFromRecipeUrl("https://migusto.migros.ch/de/rezepte"), undefined);
-    assert.equal(imageUrl({ sources: [{ url: "https://img/{stack}/a.jpg" }] }), "https://img/no-crop/resize-width-640/a.jpg");
+    assert.equal(
+      imageUrl({ sources: [{ url: "https://img/{stack}/a.jpg" }] }),
+      "https://img/no-crop/resize-width-640/a.jpg"
+    );
     assert.equal(imageUrl(42), undefined);
   });
 });
@@ -242,9 +266,14 @@ describe("one recipe by id", () => {
   });
 
   it("reads the suggested products, whatever form the ids come in", () => {
-    assert.deepEqual(productIdsFromRecipe({ recommendedProducts: ["266101701000", 104135500000] }), ["266101701000", "104135500000"]);
+    assert.deepEqual(productIdsFromRecipe({ recommendedProducts: ["266101701000", 104135500000] }), [
+      "266101701000",
+      "104135500000",
+    ]);
     assert.deepEqual(
-      productIdsFromRecipe({ recommendedProducts: [{ migrosId: "106223300000" }, { productId: 7 }, { id: "x" }, { uid: "100006357" }] }),
+      productIdsFromRecipe({
+        recommendedProducts: [{ migrosId: "106223300000" }, { productId: 7 }, { id: "x" }, { uid: "100006357" }],
+      }),
       ["106223300000", "7", "100006357"]
     );
     assert.deepEqual(productIdsFromRecipe({ recommendedProducts: { productIds: ["1", "1", "2"] } }), ["1", "2"]);
@@ -319,8 +348,14 @@ function page(opts: { canonical?: boolean; recipe?: boolean } = {}): string {
 
 describe("Migusto recipe page", () => {
   it("turns a slug into the page address, for each language", () => {
-    assert.equal(migustoRecipeUrl("marroni-aus-dem-ofen", "de"), "https://migusto.migros.ch/de/rezepte/marroni-aus-dem-ofen");
-    assert.equal(migustoRecipeUrl("marroni-aus-dem-ofen/39632", "fr"), "https://migusto.migros.ch/fr/recettes/marroni-aus-dem-ofen/39632");
+    assert.equal(
+      migustoRecipeUrl("marroni-aus-dem-ofen", "de"),
+      "https://migusto.migros.ch/de/rezepte/marroni-aus-dem-ofen"
+    );
+    assert.equal(
+      migustoRecipeUrl("marroni-aus-dem-ofen/39632", "fr"),
+      "https://migusto.migros.ch/fr/recettes/marroni-aus-dem-ofen/39632"
+    );
     assert.equal(
       migustoRecipeUrl("https://migusto.migros.ch/de/rezepte/marroni-aus-dem-ofen/39632", "it"),
       "https://migusto.migros.ch/it/ricette/marroni-aus-dem-ofen/39632"
@@ -348,7 +383,10 @@ describe("Migusto recipe page", () => {
   });
 
   it("takes the id from the page address when there is no canonical link", () => {
-    const r = parseMigustoRecipePage(page({ canonical: false }), "https://migusto.migros.ch/de/rezepte/marroni-aus-dem-ofen/39632");
+    const r = parseMigustoRecipePage(
+      page({ canonical: false }),
+      "https://migusto.migros.ch/de/rezepte/marroni-aus-dem-ofen/39632"
+    );
     assert.equal(r?.id, "39632");
   });
 
@@ -365,7 +403,10 @@ describe("Migusto recipe page", () => {
     assert.equal(r.id, "39632");
     assert.deepEqual(
       calls.map((c) => c.url),
-      ["https://migusto.migros.ch/de/rezepte/marroni-aus-dem-ofen", "https://migusto.migros.ch/de/rezepte/marroni-aus-dem-ofen/39632"]
+      [
+        "https://migusto.migros.ch/de/rezepte/marroni-aus-dem-ofen",
+        "https://migusto.migros.ch/de/rezepte/marroni-aus-dem-ofen/39632",
+      ]
     );
     assert.equal(calls[0].headers.leshopch, undefined, "no token goes to Migusto");
   });

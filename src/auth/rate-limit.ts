@@ -102,19 +102,12 @@ type CooldownState = { rateLimitedUntil?: number; rateLimitReason?: string; rate
  *                           MAX_COOLDOWN_SECONDS), or `null` to use the
  *                           backoff step for this attempt.
  */
-export function setRateLimited(
-  session: CooldownState,
-  retryAfterSeconds: number | null,
-  reason: string,
-): void {
+export function setRateLimited(session: CooldownState, retryAfterSeconds: number | null, reason: string): void {
   const recent =
-    typeof session.rateLimitedUntil === "number" &&
-    Date.now() - session.rateLimitedUntil < BACKOFF_RESET_MS;
-  const attempt = recent ? session.rateLimitAttempts ?? 0 : 0;
+    typeof session.rateLimitedUntil === "number" && Date.now() - session.rateLimitedUntil < BACKOFF_RESET_MS;
+  const attempt = recent ? (session.rateLimitAttempts ?? 0) : 0;
   const delay =
-    retryAfterSeconds !== null
-      ? Math.min(retryAfterSeconds, MAX_COOLDOWN_SECONDS) * 1000
-      : rateLimitBackoff(attempt);
+    retryAfterSeconds !== null ? Math.min(retryAfterSeconds, MAX_COOLDOWN_SECONDS) * 1000 : rateLimitBackoff(attempt);
   session.rateLimitedUntil = Date.now() + delay;
   session.rateLimitReason = reason;
   session.rateLimitAttempts = attempt + 1;
@@ -128,13 +121,8 @@ export function clearRateLimit(session: CooldownState): void {
 }
 
 /** Build a human-readable error for `isRateLimited` + expired JWT. */
-export function rateLimitBlockedMessage(session: {
-  rateLimitedUntil?: number;
-  rateLimitReason?: string;
-}): string {
-  const until = session.rateLimitedUntil
-    ? new Date(session.rateLimitedUntil).toISOString()
-    : "unknown";
+export function rateLimitBlockedMessage(session: { rateLimitedUntil?: number; rateLimitReason?: string }): string {
+  const until = session.rateLimitedUntil ? new Date(session.rateLimitedUntil).toISOString() : "unknown";
   return (
     `login.migros.ch rate-limited until ${until}; ` +
     `reason: ${session.rateLimitReason ?? "unknown"}. ` +

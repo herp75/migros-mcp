@@ -19,6 +19,15 @@ All notable changes to this project are documented here. The format is based on 
 ### Added
 
 - `LICENSE` (MIT, as `package.json` already said) and `SECURITY.md`.
+- ESLint (including the checks for unhandled promises) and Prettier, with `npm run lint`, `format`, `format:check`, `typecheck` and `test:coverage`. The code was formatted once in its own commit, listed in `.git-blame-ignore-revs`.
+- CI also type-checks the tests, lints, checks formatting and fails below 80 % line coverage of `src/`.
+- Security workflow (on every pull request, push to main and weekly): `npm audit` (fails on high), gitleaks secret scan, a guard against turned-off TLS certificate checks or listening on all interfaces, and a dependency review on pull requests (fails on high, refuses GPL/AGPL).
+- CodeQL for TypeScript and the GitHub workflows.
+- Dependabot for npm and GitHub Actions, weekly, grouped, with a two-week cooldown for new releases.
+
+### Changed
+
+- Needs Node.js 22 or newer (`engines`), as the README and CI already said.
 
 ## [0.5.1] - 2026-11-08
 

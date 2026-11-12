@@ -3,12 +3,7 @@ import axios from "axios";
 import type { AxiosInstance, AxiosResponse } from "axios";
 import type { Session } from "./cookies.js";
 import { cookieHeader, ingestSetCookie } from "./cookies.js";
-import {
-  parseRetryAfter,
-  RateLimitError,
-  setRateLimited,
-  clearRateLimit,
-} from "./rate-limit.js";
+import { parseRetryAfter, RateLimitError, setRateLimited, clearRateLimit } from "./rate-limit.js";
 
 // User-Agent matters at the Cloudflare edge: a Chrome UA from Node gets
 // blocked on www.migros.ch. This Firefox/Linux UA (borrowed from
@@ -54,7 +49,11 @@ export function migrosUrl(url: string, what: string): URL {
   return u;
 }
 
-export function uniformHeaders(host: string, session: Session, extra: Record<string, string> = {}): Record<string, string> {
+export function uniformHeaders(
+  host: string,
+  session: Session,
+  extra: Record<string, string> = {}
+): Record<string, string> {
   return {
     "User-Agent": UA,
     "Accept-Language": "en-US,en;q=0.9",
@@ -89,7 +88,8 @@ export async function silentOAuth(session: Session): Promise<string> {
   // Step 1: ask www.migros.ch for the silent-SSO URL on login.migros.ch.
   const authorizeUrl =
     "https://www.migros.ch/authentication/public/v1/api/oauth/authorize" +
-    "?redirectUri=" + encodeURIComponent(REDIRECT_URI) +
+    "?redirectUri=" +
+    encodeURIComponent(REDIRECT_URI) +
     "&withLoginPrompt=false&claimType=LOGIN&authorizationNotRequired=true";
   let r: AxiosResponse = await client().get(authorizeUrl, {
     headers: uniformHeaders("www.migros.ch", session, { Accept: "application/json, text/plain, */*" }),
@@ -100,8 +100,10 @@ export async function silentOAuth(session: Session): Promise<string> {
     setRateLimited(session, retryAfter, "oauth/authorize -> 429");
     throw new RateLimitError(
       "login.migros.ch rate-limited (429) during silent OAuth authorize step. " +
-        "Retry after: " + (retryAfter ?? "unknown") + "s",
-      retryAfter,
+        "Retry after: " +
+        (retryAfter ?? "unknown") +
+        "s",
+      retryAfter
     );
   }
   if (r.status !== 200) throw new Error("oauth/authorize -> " + r.status);
@@ -121,8 +123,10 @@ export async function silentOAuth(session: Session): Promise<string> {
     setRateLimited(session, retryAfter, "silent SSO -> 429");
     throw new RateLimitError(
       "login.migros.ch rate-limited (429) during silent SSO redirect. " +
-        "Retry after: " + (retryAfter ?? "unknown") + "s",
-      retryAfter,
+        "Retry after: " +
+        (retryAfter ?? "unknown") +
+        "s",
+      retryAfter
     );
   }
   const location: string | undefined = r.headers.location;
@@ -137,8 +141,12 @@ export async function silentOAuth(session: Session): Promise<string> {
   // Step 3: exchange the code for a JWT.
   const successUrl =
     "https://www.migros.ch/authentication/public/v1/api/oauth/login-success" +
-    "?code=" + encodeURIComponent(code) + "&state=" + encodeURIComponent(state) +
-    "&redirectUri=" + encodeURIComponent(REDIRECT_URI) +
+    "?code=" +
+    encodeURIComponent(code) +
+    "&state=" +
+    encodeURIComponent(state) +
+    "&redirectUri=" +
+    encodeURIComponent(REDIRECT_URI) +
     "&authorizationNotRequired=true";
   r = await client().get(successUrl, {
     headers: uniformHeaders("www.migros.ch", session, { Accept: "application/json" }),
@@ -149,8 +157,10 @@ export async function silentOAuth(session: Session): Promise<string> {
     setRateLimited(session, retryAfter, "oauth/login-success -> 429");
     throw new RateLimitError(
       "login.migros.ch rate-limited (429) during OAuth login-success step. " +
-        "Retry after: " + (retryAfter ?? "unknown") + "s",
-      retryAfter,
+        "Retry after: " +
+        (retryAfter ?? "unknown") +
+        "s",
+      retryAfter
     );
   }
   if (r.status !== 200) throw new Error("oauth/login-success -> " + r.status);

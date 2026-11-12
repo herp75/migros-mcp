@@ -29,7 +29,7 @@ beforeEach(() => {
   process.env.XDG_CONFIG_HOME = tmpConfig;
   assert.ok(
     sessionFile().startsWith(tmpConfig),
-    "refusing to run: session file would be written outside the temp dir: " + sessionFile(),
+    "refusing to run: session file would be written outside the temp dir: " + sessionFile()
   );
 });
 

@@ -100,7 +100,8 @@ describe("server", () => {
       if (/^(remove|delete|clear)_|^update_basket_quantity$/.test(t.name)) {
         assert.equal(a.destructiveHint, true, t.name);
       }
-      if (!a.readOnlyHint) assert.equal(typeof a.destructiveHint, "boolean", `${t.name} must say whether it is destructive`);
+      if (!a.readOnlyHint)
+        assert.equal(typeof a.destructiveHint, "boolean", `${t.name} must say whether it is destructive`);
       assert.equal(a.openWorldHint, true, t.name);
     }
   });

@@ -79,7 +79,11 @@ async function step(name, fn) {
     console.log(`ok    ${name}${note ? `  (${note})` : ""}`);
   } catch (err) {
     results.push({ name, ok: false });
-    console.log(`FAIL  ${name}  ${String(err.message ?? err).replace(/\s+/g, " ").slice(0, 300)}`);
+    console.log(
+      `FAIL  ${name}  ${String(err.message ?? err)
+        .replace(/\s+/g, " ")
+        .slice(0, 300)}`
+    );
   }
 }
 
@@ -185,5 +189,7 @@ try {
 }
 
 const failed = results.filter((r) => !r.ok);
-console.log(failed.length ? `\n${failed.length} of ${results.length} checks failed.` : `\nAll ${results.length} checks passed.`);
+console.log(
+  failed.length ? `\n${failed.length} of ${results.length} checks failed.` : `\nAll ${results.length} checks passed.`
+);
 process.exit(failed.length ? 1 : 0);

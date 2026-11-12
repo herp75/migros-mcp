@@ -57,7 +57,9 @@ interface Seen {
 }
 
 /** Answers login requests from a list of [matcher, response]; anything else fails the test. */
-function fakeLogin(routes: Array<[RegExp, { status: number; headers?: Record<string, string>; data?: string }]>): Seen[] {
+function fakeLogin(
+  routes: Array<[RegExp, { status: number; headers?: Record<string, string>; data?: string }]>
+): Seen[] {
   const seen: Seen[] = [];
   const adapter: AxiosAdapter = async (config: InternalAxiosRequestConfig) => {
     const url = config.url ?? "";
@@ -127,7 +129,11 @@ describe("redact", () => {
   });
 
   it("saved session tokens and long cookie values are registered", () => {
-    saveSession({ cookies: { "login.migros.ch": { SSO: "s".repeat(20), lang: "de" } }, jwt: "jwt-value-1234", jwtExp: 1 });
+    saveSession({
+      cookies: { "login.migros.ch": { SSO: "s".repeat(20), lang: "de" } },
+      jwt: "jwt-value-1234",
+      jwtExp: 1,
+    });
     assert.equal(redact(`${"s".repeat(20)} jwt-value-1234 lang=de`), `${MASK} ${MASK} lang=de`);
   });
 
@@ -196,7 +202,10 @@ describe("login hosts", () => {
   it("a redirect away from migros.ch stops the login before the password is sent", async () => {
     const seen = fakeLogin([
       [/^GET https:\/\/login\.migros\.ch\/login$/, { status: 200, data: form() }],
-      [/^POST https:\/\/login\.migros\.ch\/login\/email$/, { status: 302, headers: { location: "https://evil.example/login/password" } }],
+      [
+        /^POST https:\/\/login\.migros\.ch\/login\/email$/,
+        { status: 302, headers: { location: "https://evil.example/login/password" } },
+      ],
     ]);
     const session: Session = { cookies: {}, jwt: null, jwtExp: 0 };
     await assert.rejects(fullLogin(session, creds), /leads away from migros\.ch/);
@@ -207,11 +216,17 @@ describe("login hosts", () => {
     const seen = fakeLogin([
       [/^GET https:\/\/login\.migros\.ch\/login$/, { status: 200, data: form() }],
       [/^POST https:\/\/login\.migros\.ch\/login\/email$/, { status: 302, headers: { location: "/login/password" } }],
-      [/^GET https:\/\/login\.migros\.ch\/login\/password$/, { status: 200, data: form("https://www.migros.ch/steal") }],
+      [
+        /^GET https:\/\/login\.migros\.ch\/login\/password$/,
+        { status: 200, data: form("https://www.migros.ch/steal") },
+      ],
     ]);
     const session: Session = { cookies: {}, jwt: null, jwtExp: 0 };
     await assert.rejects(fullLogin(session, creds), /posts to www\.migros\.ch instead of login\.migros\.ch/);
-    assert.ok(seen.every((r) => !r.data.includes("ss%24w")), "password must not have been sent");
+    assert.ok(
+      seen.every((r) => !r.data.includes("ss%24w")),
+      "password must not have been sent"
+    );
   });
 });
 
@@ -232,7 +247,10 @@ describe("serialized", () => {
       });
     const results = await Promise.allSettled([slow("a", 30, true), slow("b", 1), slow("c", 1)]);
     assert.deepEqual(order, ["start a", "end a", "start b", "end b", "start c", "end c"]);
-    assert.deepEqual(results.map((r) => r.status), ["rejected", "fulfilled", "fulfilled"]);
+    assert.deepEqual(
+      results.map((r) => r.status),
+      ["rejected", "fulfilled", "fulfilled"]
+    );
   });
 
   it("refreshJwt reuses a token another call already refreshed", async () => {

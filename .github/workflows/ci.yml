@@ -33,4 +33,8 @@ jobs:
           node-version: ${{ matrix.node }}
       - run: npm ci --ignore-scripts
       - run: npm run build
-      - run: npm test
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run format:check
+      - name: Test (with a coverage floor for src/)
+        run: npm run test:coverage

@@ -12,7 +12,7 @@ describe("formatShoppingLists", () => {
       formatShoppingLists([
         { shoppingListId: 11, shoppingListName: "Shopping list" },
         { shoppingListId: 22, shoppingListName: "Weekend" },
-      ]),
+      ])
     );
     assert.equal(out.count, 2);
     assert.deepEqual(out.lists, [

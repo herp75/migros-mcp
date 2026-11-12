@@ -14,10 +14,7 @@ import {
 import { uidsNeedingOnlinePrice } from "./online.js";
 import { productIdsFromRecipe, recipeLanguage } from "./recipes.js";
 
-export async function searchProducts(
-  query: string,
-  language: string
-): Promise<string> {
+export async function searchProducts(query: string, language: string): Promise<string> {
   const result = await apiSearchProducts(query, language);
 
   if (result.productIds.length === 0) {
@@ -60,8 +57,7 @@ export async function searchProducts(
 function formatNutrition(product: Record<string, unknown>): string | null {
   const productInfo = product.productInformation as Record<string, unknown> | undefined;
   const nutrients = (productInfo?.nutrientsInformation ?? product.nutrientsInformation) as
-    | { nutrientsTable?: { headers?: unknown[]; rows?: unknown[] } }
-    | undefined;
+    { nutrientsTable?: { headers?: unknown[]; rows?: unknown[] } } | undefined;
 
   if (!nutrients?.nutrientsTable?.rows) return null;
 
@@ -238,9 +234,7 @@ export function formatOnlineCard(card: Record<string, unknown>): Record<string, 
   return formatted;
 }
 
-export async function getProductDetails(
-  productIds: string[]
-): Promise<string> {
+export async function getProductDetails(productIds: string[]): Promise<string> {
   const products = ((await apiGetProductDetails(productIds)) ?? []) as Record<string, unknown>[];
 
   // Online-only products (e.g. "Partner") have no in-store price, or aren't
@@ -268,10 +262,7 @@ export async function getProductDetails(
   return JSON.stringify(formatted, null, 2);
 }
 
-export async function getStock(
-  productId: string,
-  storeId: string
-): Promise<string> {
+export async function getStock(productId: string, storeId: string): Promise<string> {
   const result = await apiGetStock(productId, storeId);
 
   if (result.stock === null) {

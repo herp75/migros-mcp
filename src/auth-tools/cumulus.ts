@@ -11,11 +11,7 @@ export const CUMULUS_PROFILE_PATH = "/retentionapi/public/web/v1/cumulus-profile
 /** Shape the Cumulus profile for the LLM. `null` means the account has no Cumulus card. */
 export function formatCumulusProfile(data: Record<string, unknown> | null): string {
   if (!data) {
-    return JSON.stringify(
-      { hasCumulus: false, message: "No Cumulus card is linked to this Migros account." },
-      null,
-      2
-    );
+    return JSON.stringify({ hasCumulus: false, message: "No Cumulus card is linked to this Migros account." }, null, 2);
   }
   const owner = data.cumulusCardOwner as Record<string, unknown> | undefined;
   const cardholder = owner ? `${owner.firstName ?? ""} ${owner.lastName ?? ""}`.trim() : "";
@@ -42,8 +38,7 @@ export function formatCumulusProfile(data: Record<string, unknown> | null): stri
  * has no Cumulus card.
  */
 export async function getCumulusStatus(
-  fetchProfile: () => Promise<unknown> = () =>
-    api("GET", CUMULUS_PROFILE_PATH, undefined, { creds: credsFromEnv() })
+  fetchProfile: () => Promise<unknown> = () => api("GET", CUMULUS_PROFILE_PATH, undefined, { creds: credsFromEnv() })
 ): Promise<string> {
   try {
     return formatCumulusProfile((await fetchProfile()) as Record<string, unknown>);
@@ -58,11 +53,13 @@ export async function getCumulusStatus(
  * 30 days. The supermarketOnly flag excludes online order invoices, so this
  * tool answers "what did I buy at the physical store?".
  */
-export async function getInStoreReceipts(args: {
-  startDate?: string;
-  endDate?: string;
-  limit?: number;
-} = {}): Promise<string> {
+export async function getInStoreReceipts(
+  args: {
+    startDate?: string;
+    endDate?: string;
+    limit?: number;
+  } = {}
+): Promise<string> {
   const today = new Date().toISOString().slice(0, 10);
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString().slice(0, 10);
   const startDate = args.startDate ?? thirtyDaysAgo;
@@ -76,7 +73,7 @@ export async function getInStoreReceipts(args: {
   const data = await api("GET", url, undefined, { creds: credsFromEnv() });
 
   // Response may be an array or an envelope; normalize.
-  const list = Array.isArray(data) ? data : (data as { receipts?: unknown[] }).receipts ?? [];
+  const list = Array.isArray(data) ? data : ((data as { receipts?: unknown[] }).receipts ?? []);
   return JSON.stringify(
     {
       startDate,
@@ -109,8 +106,7 @@ export async function getReceiptDetails(args: { receiptId: string | number }): P
       message:
         "Full line items aren't accessible via the public API used by this MCP. Open the URL below in your browser to view the receipt details directly.",
       url: `https://account.migros.ch/purchases/receipts`,
-      hint:
-        "The receipt list (get_in_store_receipts) returns store, date, amount, and Cumulus points which is enough for most spending-analysis queries.",
+      hint: "The receipt list (get_in_store_receipts) returns store, date, amount, and Cumulus points which is enough for most spending-analysis queries.",
     },
     null,
     2
@@ -125,13 +121,8 @@ export async function getCumulusCoupons(): Promise<string> {
   // The SPA calls cumulus-coupons with a deliveryRequestKey when in checkout
   // context (filters to coupons valid for the active delivery). For a general
   // "what coupons do I have" view, omit the key — the server returns all.
-  const data = await api(
-    "GET",
-    "/retentionapi/public/web/v1/cumulus-coupons",
-    undefined,
-    { creds: credsFromEnv() }
-  );
-  const list = Array.isArray(data) ? data : (data as { coupons?: unknown[] }).coupons ?? [];
+  const data = await api("GET", "/retentionapi/public/web/v1/cumulus-coupons", undefined, { creds: credsFromEnv() });
+  const list = Array.isArray(data) ? data : ((data as { coupons?: unknown[] }).coupons ?? []);
   return JSON.stringify(
     {
       count: list.length,
