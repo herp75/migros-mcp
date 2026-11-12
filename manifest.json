@@ -2,8 +2,8 @@
   "manifest_version": "0.3",
   "name": "migros-mcp",
   "display_name": "Migros",
-  "version": "0.6.0",
-  "description": "Search Migros products and (optionally) manage your basket, addresses, and order history through Claude.",
+  "version": "0.6.1",
+  "description": "Unofficial MCP server for Migros Switzerland: search products, recipes, stores and promotions. Signed in, it manages your basket and shopping lists, orders, receipts and Cumulus coupons. Never orders or pays.",
   "author": {
     "name": "lewpgs and contributors (fork: herp75)"
   },
