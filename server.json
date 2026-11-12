@@ -1,0 +1,42 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.herp75/migros-mcp",
+  "description": "Migros Switzerland: products, stores, recipes; with login basket, lists, orders, Cumulus",
+  "repository": {
+    "url": "https://github.com/herp75/migros-mcp",
+    "source": "github"
+  },
+  "version": "0.5.1",
+  "packages": [
+    {
+      "registryType": "oci",
+      "identifier": "ghcr.io/herp75/migros-mcp:0.5.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "MIGROS_EMAIL",
+          "description": "Migros login e-mail (leave out to only use the tools without an account)",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "MIGROS_PASSWORD",
+          "description": "Migros password (use one you use nowhere else)",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "MIGROS_TOTP_SECRET",
+          "description": "2FA setup key, so no code is ever asked for (works like a second password)",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}

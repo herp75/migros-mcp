@@ -12,6 +12,10 @@ All notable changes to this project are documented here. The format is based on 
 
 - Documentation: a **Settings** table in the README (every environment variable, with its default), a **Kind** column (reads, changes, deletes) in the tool table, `docs/architecture.md` (modules, login and session, a checklist for adding a tool) and `CONTRIBUTING.md` (checks, live-check rules, what never goes into an issue or commit).
 
+- **Docker image** `ghcr.io/herp75/migros-mcp`: Node 24 Alpine pinned by digest, runs as an unprivileged user, no npm at runtime, the saved login in the volume `/config`, the npm update notice off. Built and scanned with Trivy on every pull request; pushed from `main` (`edge`) and from release tags, for amd64 and arm64, with provenance, SBOM and a keyless cosign signature.
+- **Release workflow for this fork:** on a `vX.Y.Z` tag it checks that every version file and the CHANGELOG agree and that the tag is on `main`, runs CI and the security checks, pushes the image, creates the GitHub Release and publishes `server.json` to the MCP Registry as `io.github.herp75/migros-mcp`. Upstream's npm and `.mcpb` jobs are gone: the npm name belongs to upstream.
+- Dependabot also updates the Docker base image.
+
 ### Changed
 
 - `get_cumulus_coupons` returns each coupon's useful fields (name, texts, discount, minimum purchase, expiry, status, `ean`) plus `canActivate`, without colours and campaign data.
@@ -44,6 +48,7 @@ All notable changes to this project are documented here. The format is based on 
 
 ### Changed
 
+- The README installs this fork from its Docker image, with the login in an env file only you can read. The npm package and the `.mcpb` installer are upstream's.
 - Needs Node.js 22 or newer (`engines`), as the README and CI already said.
 
 ## [0.5.1] - 2026-11-08

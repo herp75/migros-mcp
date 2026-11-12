@@ -6,58 +6,70 @@ Lets Claude (and other AI apps) search [Migros](https://www.migros.ch) products,
 
 ## Install
 
-It runs on your own computer, so it works in desktop apps that can start a program: Claude Desktop, Claude Code, Cursor and similar. It doesn't work on claude.ai in a browser or in the Claude phone apps.
+> **This is a fork.** [herp75/migros-mcp](https://github.com/herp75/migros-mcp) is [lewpgs/migros-mcp](https://github.com/lewpgs/migros-mcp) with security hardening, live tests and more tools (see the [CHANGELOG](CHANGELOG.md)). It comes as a **Docker image**, `ghcr.io/herp75/migros-mcp`, and is listed in the MCP Registry as `io.github.herp75/migros-mcp`. The npm package `migros-mcp` and the Claude Desktop installer `migros-mcp.mcpb` are upstream's version, not this one.
 
-### Claude Desktop
+It runs on your own computer, so it works in desktop apps that can start a program: Claude Desktop, Claude Code, Cursor and similar. It doesn't work on claude.ai in a browser or in the Claude phone apps. You need [Docker](https://docs.docker.com/get-docker/) or [Podman](https://podman.io).
 
-1. Download **[migros-mcp.mcpb](https://github.com/lewpgs/migros-mcp/releases/latest/download/migros-mcp.mcpb)**.
-2. Open Claude's settings: on Windows, the menu > **File** > **Settings**. On a Mac, **Claude** > **Settings** in the menu bar.
-3. Go to **Desktop app**, scroll down to **Extensions** and click **Manage**.
-4. Drag the downloaded file onto that page, then click **Install**.
-5. Claude asks for your Migros details. Leave them all blank to only search. Fill in your email and password to use your basket and orders (see [Your Migros account](#your-migros-account)).
+**Your login, in a file only you can read.** Skip this to only search.
 
-Nothing else to install.
+```bash
+install -m 600 /dev/null ~/.config/migros-mcp.env
+"${EDITOR:-nano}" ~/.config/migros-mcp.env
+```
+
+```
+MIGROS_EMAIL=you@example.com
+MIGROS_PASSWORD=your-password
+```
+
+One line each, no quotes. `$`, `#` and quotes in the password are fine (Docker reads the file as written). For 2FA without being asked for codes, add `MIGROS_TOTP_SECRET=...` (see [Your Migros account](#your-migros-account)).
+
+The saved login lives in the Docker volume `migros-mcp`, so it survives restarts. That matters: Migros blocks computers that sign in too often.
 
 ### Claude Code
 
-Needs [Node.js](https://nodejs.org) 22 or newer.
-
 ```bash
-claude mcp add migros -- npx -y migros-mcp
+claude mcp add migros -- docker run -i --rm \
+  --env-file ~/.config/migros-mcp.env -v migros-mcp:/config \
+  ghcr.io/herp75/migros-mcp:0.6
 ```
 
-With your Migros account:
+Leave out `--env-file …` to only search. With Podman, write `podman` instead of `docker`.
 
-```bash
-claude mcp add migros \
-  -e MIGROS_EMAIL=you@example.com \
-  -e MIGROS_PASSWORD='your-password' \
-  -- npx -y migros-mcp
-```
+### Claude Desktop, Cursor and other apps
 
-### Cursor and other apps
+Add this to the app's MCP config file, with your home folder in the path:
 
-Needs [Node.js](https://nodejs.org) 22 or newer. Add this to the app's MCP config file:
-
+- **Claude Desktop:** Settings > Developer > Edit Config
 - **Cursor:** `~/.cursor/mcp.json` (all projects) or `.cursor/mcp.json` (one project)
-- **Claude Desktop without the installer:** Settings > Developer > Edit Config
 
 ```json
 {
   "mcpServers": {
     "migros": {
-      "command": "npx",
-      "args": ["-y", "migros-mcp"],
-      "env": {
-        "MIGROS_EMAIL": "you@example.com",
-        "MIGROS_PASSWORD": "your-password"
-      }
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm",
+        "--env-file", "/home/you/.config/migros-mcp.env",
+        "-v", "migros-mcp:/config",
+        "ghcr.io/herp75/migros-mcp:0.6"
+      ]
     }
   }
 }
 ```
 
-Leave out the `env` block to only search. Other apps (VS Code, Windsurf, Zed and so on) run the same command, `npx -y migros-mcp`, but lay out their config a little differently. Check your app's MCP instructions.
+Other apps (VS Code, Windsurf, Zed and so on) run the same command but lay out their config a little differently. Check your app's MCP instructions.
+
+### Checking the image (optional)
+
+Each image is signed with [cosign](https://docs.sigstore.dev/cosign/), keyless, by the release workflow of this repository:
+
+```bash
+cosign verify ghcr.io/herp75/migros-mcp:0.6 \
+  --certificate-identity-regexp '^https://github.com/herp75/migros-mcp/\.github/workflows/(docker|release)\.yml@' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
 
 ### Check that it works
 
@@ -87,7 +99,7 @@ The setup key (also called the TOTP secret) is **not** the 6-digit code. It's th
 - **Saved in a password manager?** Open the Migros entry and look for an option like "View one-time password secret". If you see a link starting with `otpauth://`, the setup key is the part after `secret=`.
 - **Not saved anywhere?** Migros only shows it while you set up 2FA. In your Migros account settings, remove 2FA and set it up again. Under the QR code is a box saying *"Or enter the following key in the authenticator app"*. Copy that key before you finish, and add the new entry to your authenticator app.
 
-In Claude Desktop it goes in the *Migros TOTP Secret* field. Everywhere else, add `MIGROS_TOTP_SECRET` next to the email and password (`-e MIGROS_TOTP_SECRET=...` with `claude mcp add`, or one more line in the `env` block).
+Add it as one more line, `MIGROS_TOTP_SECRET=...`, in `~/.config/migros-mcp.env` (see [Install](#install)).
 
 </details>
 
@@ -95,16 +107,16 @@ Only codes from an authenticator app work. If your account uses a passkey only, 
 
 ## Settings
 
-All settings are environment variables (in Claude Desktop, the fields the installer shows). None is required.
+All settings are environment variables. With Docker, put them in `~/.config/migros-mcp.env` (see [Install](#install)). None is required.
 
 | Variable | Default | What it does |
 |---|---|---|
 | `MIGROS_EMAIL` | none | Your Migros login email. Without email and password, only the tools without an account work. |
 | `MIGROS_PASSWORD` | none | Your Migros password. Only ever sent to `login.migros.ch`. |
 | `MIGROS_TOTP_SECRET` | none | The 2FA setup key, so you're never asked for a code. Works like a second password: keep it as safe. |
-| `MIGROS_MCP_UPDATE_CHECK` | on | `false`, `0`, `off` or `no` turns off the daily check for a newer version. |
+| `MIGROS_MCP_UPDATE_CHECK` | on; off in the image | `false`, `0`, `off` or `no` turns off the daily check for a newer npm version. |
 | `MIGROS_API_WRAPPER_USERAGENT` | built in | Overrides the browser name sent with the searches that need no account. Rarely needed. |
-| `XDG_CONFIG_HOME` (Linux), `APPDATA` (Windows) | the usual place | Where the saved login (`migros-mcp/session.json`) is kept. On a Mac it's always `~/Library/Application Support/migros-mcp/`. |
+| `XDG_CONFIG_HOME` (Linux), `APPDATA` (Windows) | the usual place; `/config` in the image | Where the saved login (`migros-mcp/session.json`) is kept. On a Mac it's always `~/Library/Application Support/migros-mcp/`. |
 
 For development only: `MIGROS_TEST_EMAIL`, `MIGROS_TEST_PASSWORD`, `MIGROS_TEST_TOTP_SECRET`, `MIGROS_LIVE_ENV_FILE` and `MIGROS_LIVE_SESSION_DIR` (see [Development](#development)).
 
@@ -132,26 +144,19 @@ With your account:
 
 ## Updating
 
-| You installed with | To update |
-|---|---|
-| `npx -y migros-mcp` (Claude Code, Cursor, a config file) | Nothing to do. You get the new version the next time the app starts. |
-| The `.mcpb` file in Claude Desktop | Download the [latest migros-mcp.mcpb](https://github.com/lewpgs/migros-mcp/releases/latest/download/migros-mcp.mcpb) and open it again. Your saved details stay. |
-| A fixed version, like `migros-mcp@0.4.0` | Change the number, or remove `@0.4.0` to always get the newest. |
+`:0.6` follows the newest 0.6.x release (fixes only). To get it, pull the image and restart the app:
 
-Stuck on an old version with npx? Run `npm cache clean --force` and restart the app.
+```bash
+docker pull ghcr.io/herp75/migros-mcp:0.6
+```
 
-**Update notice.** About once a day, while you use it, migros-mcp asks the npm registry for the newest version number. If a newer one is out, one answer a day ends with a short line saying so. Nothing about you is sent (npm sees your IP address, as with any download). To turn it off: in Claude Desktop, untick *Tell me when a new version is out* in the extension's settings (Settings > Desktop app > Extensions > Manage). Anywhere else, set `MIGROS_MCP_UPDATE_CHECK=false` (`-e MIGROS_MCP_UPDATE_CHECK=false` with `claude mcp add`, or one more line in the `env` block).
+New features come with a new minor version (`:0.7`): change the tag in your config. Releases are listed on the [releases page](https://github.com/herp75/migros-mcp/releases) and in the [CHANGELOG](CHANGELOG.md). The image doesn't check for updates itself (`MIGROS_MCP_UPDATE_CHECK` is off in it).
 
 ## Privacy and safety
 
 - Your email, password and setup key are only ever sent to Migros' own login page (`login.migros.ch`). A 6-digit code you give Claude is used for that one sign-in and never stored or logged.
-- The Claude Desktop installer keeps your password and setup key in your computer's keychain. With npx (Claude Code, Cursor, a config file) they sit in plain text in that app's config file.
-- Once you're signed in, the saved login (cookies and an access token) stays on your computer, in `session.json`:
-  - Mac: `~/Library/Application Support/migros-mcp/`
-  - Windows: `%APPDATA%\migros-mcp\`
-  - Linux: `~/.config/migros-mcp/` (or `$XDG_CONFIG_HOME/migros-mcp/`)
-
-  Deleting that file signs you out. Only you can read it (on Mac and Linux).
+- Your password and setup key sit in `~/.config/migros-mcp.env`, readable only by you, not in the app's config file.
+- Once you're signed in, the saved login (cookies and an access token) stays on your computer, in `session.json` in the Docker volume `migros-mcp`. `docker volume rm migros-mcp` signs you out. Inside the volume, only the server's user can read it. (Run without Docker, it's in `~/.config/migros-mcp/` on Linux, `~/Library/Application Support/migros-mcp/` on a Mac, `%APPDATA%\migros-mcp\` on Windows.)
 - Your email, password, setup key, cookies and access token are masked in error messages.
 - Tools that change your basket are marked as such, so your app can ask you before running them. Leave that approval on.
 - Product texts, recipes and order data come from Migros and other people. migros-mcp tells the AI to treat them as information, not as instructions.
