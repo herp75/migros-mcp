@@ -224,7 +224,9 @@ Check the tools that need no account against the live Migros website. GitHub als
 npm run live-check
 ```
 
-Check the tools that need an account, with a dedicated **test** account (never your own). Put its login in `.env.live` (git-ignored, `chmod 600`) as `MIGROS_TEST_EMAIL`, `MIGROS_TEST_PASSWORD` and, for 2FA, `MIGROS_TEST_TOTP_SECRET`. `--write` also adds a product to the basket, changes its quantity and removes it again, checking that the basket ends up as before. The test login is kept in `.live-session/`, so repeated runs don't sign in again each time. GitHub runs this every Monday too, with the same values as secrets of the `live` environment.
+Check the tools that need an account, with a dedicated **test** account (never your own). Put its login in `.env.live` (git-ignored, `chmod 600`) as `MIGROS_TEST_EMAIL`, `MIGROS_TEST_PASSWORD` and, for 2FA, `MIGROS_TEST_TOTP_SECRET`. `--write` also adds a product to the basket, changes its quantity and removes it again, checking that the basket ends up as before. The test login is kept in `.live-session/`, so repeated runs don't sign in again each time.
+
+Migros answers logins from GitHub's servers with a bot check, so this runs weekly on a computer instead: `scripts/migros-live-check.sh` builds the latest `main` in its own folder (`~/.local/state/migros-live-check/`) and runs the check with `--write`. To schedule it, copy `scripts/systemd/migros-live-check.service` and `.timer` to `~/.config/systemd/user/` and run `systemctl --user enable --now migros-live-check.timer`; results are in `journalctl --user -u migros-live-check`. The `live` workflow on GitHub can still be started by hand, to see whether GitHub's servers get through again.
 
 ```bash
 npm run live-account              # read-only
