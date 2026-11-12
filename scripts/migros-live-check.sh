@@ -4,7 +4,7 @@
 #
 # It checks what people install: the published image, ghcr.io/herp75/migros-mcp
 # (tag `edge`, built from main, unless MIGROS_LIVE_IMAGE_TAG says otherwise).
-#   1. Pull the image and pin this run to its digest.
+#   1. Look up the image's digest in the registry and pull exactly that.
 #   2. Verify its keyless cosign signature: built by this repo's docker.yml on
 #      main or on a release tag. (Skipped only with MIGROS_LIVE_SKIP_VERIFY=1.)
 #   3. Take scripts/live-account-check.mjs from the commit the image was built
@@ -31,12 +31,14 @@ podman=(podman --cgroup-manager=cgroupfs)
 umask 077
 mkdir -p "$state/session" "$state/check"
 
-"${podman[@]}" pull --quiet "$image" >/dev/null
-digest="$("${podman[@]}" image inspect "$image" --format '{{index .RepoDigests 0}}')"
-case "$digest" in
-  ghcr.io/herp75/migros-mcp@sha256:*) ;;
-  *) echo "unexpected image reference: $digest" >&2; exit 1 ;;
-esac
+# The image is a multi-arch index, and only the index is signed. Take its digest
+# from the registry (the sha256 of the raw manifest) and pull by that digest:
+# podman's RepoDigests lists the index and the platform image in no fixed order.
+command -v skopeo >/dev/null || { echo "skopeo is needed to look up the image digest" >&2; exit 2; }
+sha="$(skopeo inspect --raw "docker://$image" | sha256sum | cut -d' ' -f1)"
+[[ "$sha" =~ ^[0-9a-f]{64}$ ]] || { echo "could not look up the digest of $image" >&2; exit 1; }
+digest="ghcr.io/herp75/migros-mcp@sha256:$sha"
+"${podman[@]}" pull --quiet "$digest" >/dev/null
 
 if [ "${MIGROS_LIVE_SKIP_VERIFY:-}" = 1 ]; then
   echo "warning: signature not checked (MIGROS_LIVE_SKIP_VERIFY=1)" >&2

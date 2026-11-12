@@ -48,8 +48,8 @@ How the code fits together, and a checklist for adding a tool: [docs/architectur
   - `--write` changes the basket, a temporary shopping list and one coupon, and puts
     everything back.
   - Migros blocks logins from cloud servers, so this runs on a computer, not on GitHub.
-    `scripts/migros-live-check.sh` runs it weekly inside the published, signed image (podman
-    and cosign needed).
+    `scripts/migros-live-check.sh` runs it weekly inside the published, signed image (podman,
+    skopeo and cosign needed).
 - Live checks print tool names and counts only. Don't add output with names, addresses or order
   data: logs get shared.
 

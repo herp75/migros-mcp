@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format is based on 
 
 ## [Unreleased]
 
+### Fixed
+
+- The weekly live check could refuse a correctly signed image as unsigned: podman lists the multi-arch index and the platform image in no fixed order, and only the index is signed. It now looks up the index digest in the registry (needs skopeo) and pulls exactly that.
+
 ## [0.6.1] - 2026-11-12
 
 ### Changed
