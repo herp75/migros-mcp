@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+
+- **Logins run one at a time.** Tool calls that arrive together no longer each start their own Migros login (repeated half-finished logins get the IP blocked) or overwrite each other's saved cookies. A call whose token was rejected uses the token another call just got instead of refreshing again.
+- **The login only talks to migros.ch over HTTPS.** It stops if a Migros page or redirect points anywhere else, and the email and password are only ever posted to `login.migros.ch`.
+- **Secrets are masked in error messages:** email, password, setup key, access token, long cookie values, Bearer tokens, JWTs and OAuth codes, also URL-encoded or JSON-escaped. A setup key with a wrong character no longer shows that character.
+- **Tools say what they do:** reads are marked read-only, `update_basket_quantity` and `remove_from_basket` destructive, `add_to_basket` and `authenticate` as changes. Clients use this to decide which calls need approval.
+- **The server tells the client** that product, recipe, order and receipt data are information to show, not instructions to follow.
+- **Inputs are bounded:** ids must be plain ids (no `/`, `?` or `..`), at most 50 products per call, search texts up to 200 characters, quantities up to 999, page and offset numbers capped.
+- The login requests time out after 20 seconds instead of waiting forever.
+- The folder holding `session.json` is now only readable by you (700), also when it already existed.
+- zod 4: fixes a memory exhaustion advisory in zod 3.
+
+### Added
+
+- `LICENSE` (MIT, as `package.json` already said) and `SECURITY.md`.
+
 ## [0.5.1] - 2026-11-08
 
 ### Fixed

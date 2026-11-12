@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import type { AxiosResponse } from "axios";
 import type { Session } from "./cookies.js";
 import { ingestSetCookie } from "./cookies.js";
-import { client, uniformHeaders, silentOAuth } from "./oauth.js";
+import { client, migrosUrl, uniformHeaders, silentOAuth } from "./oauth.js";
 import { parseRetryAfter, RateLimitError, setRateLimited } from "./rate-limit.js";
 
 export interface Credentials {
@@ -48,7 +48,7 @@ export function totpFromSecret(
   let bits = "";
   for (const c of cleaned) {
     const v = alphabet.indexOf(c);
-    if (v < 0) throw new Error(`invalid base32 char in TOTP secret: ${c}`);
+    if (v < 0) throw new Error("MIGROS_TOTP_SECRET is not a valid setup key (only letters A-Z and digits 2-7)");
     bits += v.toString(2).padStart(5, "0");
   }
   const key = Buffer.alloc(Math.floor(bits.length / 8));
@@ -90,8 +90,11 @@ function findError(html: string): string | null {
   return m ? m[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim() : null;
 }
 
+/** The password only ever goes to the login host itself. */
+const LOGIN_HOST = "login.migros.ch";
+
 async function get(url: string, session: Session, extra: Record<string, string> = {}) {
-  const host = new URL(url).host;
+  const host = migrosUrl(url, "a login step").host;
   const r = await client().get(url, { headers: uniformHeaders(host, session, { Accept: "text/html", ...extra }) });
   ingestSetCookie(session, host, r.headers["set-cookie"]);
   if (r.status === 429) {
@@ -107,7 +110,8 @@ async function get(url: string, session: Session, extra: Record<string, string> 
 }
 
 async function postForm(url: string, session: Session, body: Record<string, string>) {
-  const host = new URL(url).host;
+  const host = migrosUrl(url, "a login form").host;
+  if (host !== LOGIN_HOST) throw new Error(`a login form posts to ${host} instead of ${LOGIN_HOST}, stopped`);
   const formBody = Object.entries(body)
     .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
     .join("&");
