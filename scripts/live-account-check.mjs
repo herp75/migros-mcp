@@ -151,6 +151,7 @@ let listId;
 let before;
 let orders = [];
 let receipts = [];
+let coupons = [];
 
 try {
   const init = await request("initialize", {
@@ -244,9 +245,16 @@ try {
     return out.hasCumulus ? "card linked" : "no card";
   });
 
+  await step("get_cumulus_bons", async () => {
+    const out = await call("get_cumulus_bons");
+    check(Array.isArray(out.bons), "no bons list");
+    return `${out.bons.length} bons`;
+  });
+
   await step("get_cumulus_coupons", async () => {
     const out = await call("get_cumulus_coupons");
     check(Array.isArray(out.coupons), "no coupons list");
+    coupons = out.coupons;
     return `${out.coupons.length} coupons`;
   });
 
@@ -309,6 +317,80 @@ try {
         );
         return `${after.items.length} items`;
       });
+    }
+
+    // A temporary list: create, rename, an item with a note, delete (first
+    // without confirm, which must be refused). Deleted in any case.
+    let tempList;
+    try {
+      await step("create_shopping_list", async () => {
+        const out = await call("create_shopping_list", { name: "migros-mcp live check" });
+        tempList = out.shoppingListId;
+        check(typeof tempList === "number", "no shoppingListId");
+        return "created";
+      });
+
+      await step("rename_shopping_list", async () => {
+        check(tempList, "skipped: no list");
+        await call("rename_shopping_list", { shoppingListId: tempList, name: "migros-mcp live check (renamed)" });
+        const { lists } = await call("get_shopping_lists");
+        check(
+          lists.some((l) => l.shoppingListId === tempList && l.name === "migros-mcp live check (renamed)"),
+          "new name not shown"
+        );
+        return "renamed";
+      });
+
+      await step("set_item_note", async () => {
+        check(tempList, "skipped: no list");
+        const found = await call("search_products", { query: "Vollmilch" });
+        const productId = String(found.productIds[0]);
+        await call("add_to_basket", { productId, quantity: 2, shoppingListId: tempList });
+        const out = await call("set_item_note", { productId, note: "live check", shoppingListId: tempList });
+        check(out.noted === true && out.quantity === 2, "note not set or quantity changed");
+        return "note set, quantity kept";
+      });
+
+      await step("delete_shopping_list without confirm is refused", async () => {
+        check(tempList, "skipped: no list");
+        const out = await call("delete_shopping_list", { shoppingListId: tempList });
+        check(out.deleted === false, "deleted without confirm");
+        const { lists } = await call("get_shopping_lists");
+        check(
+          lists.some((l) => l.shoppingListId === tempList),
+          "list is gone"
+        );
+        return "refused";
+      });
+    } finally {
+      await step("delete_shopping_list", async () => {
+        check(tempList, "skipped: no list");
+        const out = await call("delete_shopping_list", { shoppingListId: tempList, confirm: true });
+        check(out.deleted === true, "not deleted");
+        const { lists } = await call("get_shopping_lists");
+        check(!lists.some((l) => l.shoppingListId === tempList), "list is still there");
+        return `back to ${lists.length} lists`;
+      });
+    }
+
+    // A coupon: activate, then deactivate again, so it ends as it started.
+    const coupon = coupons.find((c) => c.canActivate);
+    if (coupon) {
+      try {
+        await step("activate_cumulus_coupon", async () => {
+          const out = await call("activate_cumulus_coupon", { ean: coupon.ean });
+          check(out.status === "ACTIVE", `status ${out.status}`);
+          return "ACTIVE";
+        });
+      } finally {
+        await step("deactivate_cumulus_coupon", async () => {
+          const out = await call("deactivate_cumulus_coupon", { ean: coupon.ean });
+          check(out.status === "AVAILABLE", `status ${out.status}`);
+          return "AVAILABLE again";
+        });
+      }
+    } else {
+      console.log("skip  activate_cumulus_coupon  (no coupon that can be activated)");
     }
   }
 } catch (err) {

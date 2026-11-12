@@ -1,0 +1,7 @@
+migros-mcp
+Copyright (c) 2026 lewpgs and contributors (MIT, see LICENSE)
+
+Feature ideas (which shopping-list and Cumulus actions exist) came from
+hczr-dev/m-connect, MIT License, Copyright (c) 2026 M-Connect contributors.
+No code was copied from it; the routes used are the migros.ch website's own
+(see docs/website-routes.md).

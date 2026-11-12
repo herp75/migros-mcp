@@ -2,7 +2,7 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { register, READ_ONLY, WRITE, DESTRUCTIVE } from "./register.js";
+import { register, READ_ONLY, WRITE, CREATE, DESTRUCTIVE } from "./register.js";
 import { enableUpdateCheck } from "./update-check.js";
 import {
   SearchProductsSchema,
@@ -23,6 +23,11 @@ import {
   GetOrderDetailsSchema,
   GetInStoreReceiptsSchema,
   GetReceiptDetailsSchema,
+  CreateShoppingListSchema,
+  RenameShoppingListSchema,
+  DeleteShoppingListSchema,
+  SetItemNoteSchema,
+  CouponSchema,
 } from "./schemas.js";
 import {
   searchProducts,
@@ -51,6 +56,12 @@ import {
   getInStoreReceipts,
   getReceiptDetails,
   getCumulusCoupons,
+  setCouponActive,
+  getCumulusBons,
+  createShoppingList,
+  renameShoppingList,
+  deleteShoppingList,
+  setItemNote,
 } from "./auth-tools.js";
 
 // ---------------------------------------------------------------------------
@@ -226,6 +237,44 @@ register(
   (args) => removeFromBasket(args)
 );
 
+// --- Authenticated: shopping lists ---
+
+register(
+  server,
+  "create_shopping_list",
+  "Create a new, empty shopping list and return its shoppingListId, which the basket tools take. Requires authentication.",
+  CreateShoppingListSchema.shape,
+  CREATE,
+  (args) => createShoppingList(args)
+);
+
+register(
+  server,
+  "rename_shopping_list",
+  "Rename one of the user's shopping lists. Requires authentication.",
+  RenameShoppingListSchema.shape,
+  WRITE,
+  (args) => renameShoppingList(args)
+);
+
+register(
+  server,
+  "delete_shopping_list",
+  "Delete one of the user's shopping lists with all its items. Cannot be undone. Only deletes with confirm: true, which needs the user's explicit OK; the only remaining list is never deleted. Requires authentication.",
+  DeleteShoppingListSchema.shape,
+  DESTRUCTIVE,
+  (args) => deleteShoppingList(args)
+);
+
+register(
+  server,
+  "set_item_note",
+  "Set the note of an item already in a shopping list (e.g. 'laktosefrei'), keeping its quantity. Replaces an earlier note. Requires authentication.",
+  SetItemNoteSchema.shape,
+  WRITE,
+  (args) => setItemNote(args)
+);
+
 // --- Authenticated: orders ---
 
 register(
@@ -291,6 +340,33 @@ register(
   {},
   READ_ONLY,
   () => getCumulusCoupons()
+);
+
+register(
+  server,
+  "activate_cumulus_coupon",
+  "Put a personal Cumulus coupon on the user's Cumulus card, so it applies to their next purchase (online or in store). Nothing is bought. Use the ean from get_cumulus_coupons. Requires authentication.",
+  CouponSchema.shape,
+  WRITE,
+  (args) => setCouponActive(args, true)
+);
+
+register(
+  server,
+  "deactivate_cumulus_coupon",
+  "Take an activated Cumulus coupon off the card again (status back to AVAILABLE). Use the ean from get_cumulus_coupons. Requires authentication.",
+  CouponSchema.shape,
+  WRITE,
+  (args) => setCouponActive(args, false)
+);
+
+register(
+  server,
+  "get_cumulus_bons",
+  "List the user's Cumulus bons (vouchers their Cumulus points turned into). Read only: bons are redeemed at checkout on migros.ch or in a store. Requires authentication.",
+  {},
+  READ_ONLY,
+  () => getCumulusBons()
 );
 
 // ---------------------------------------------------------------------------

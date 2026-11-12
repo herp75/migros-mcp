@@ -171,3 +171,43 @@ export const GetReceiptDetailsSchema = z.object({
     .union([id("receiptId"), z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER)])
     .describe("Receipt id from get_in_store_receipts."),
 });
+
+// ---------------------------------------------------------------------------
+// Authenticated: shopping lists
+// ---------------------------------------------------------------------------
+
+const listName = () => z.string().trim().min(1).max(100);
+
+export const CreateShoppingListSchema = z.object({
+  name: listName().describe("Name of the new list, e.g. 'Wochenende'."),
+});
+
+export const RenameShoppingListSchema = z.object({
+  shoppingListId: listId().describe("List ID from get_shopping_lists."),
+  name: listName().describe("The new name."),
+});
+
+export const DeleteShoppingListSchema = z.object({
+  shoppingListId: listId().describe("List ID from get_shopping_lists."),
+  confirm: z
+    .boolean()
+    .optional()
+    .describe("Must be true to delete. Ask the user first: the list and its items are gone for good."),
+});
+
+export const SetItemNoteSchema = z.object({
+  productId: id("productId").describe("Product UID of an item already in the list."),
+  note: z.string().trim().min(1).max(200).describe("The note, e.g. 'laktosefrei' or 'die grosse Packung'."),
+  shoppingListId: listId().optional().describe("Optional list ID from get_shopping_lists; omit to use the first list."),
+});
+
+// ---------------------------------------------------------------------------
+// Authenticated: Cumulus coupons
+// ---------------------------------------------------------------------------
+
+export const CouponSchema = z.object({
+  ean: z
+    .string()
+    .regex(/^\d{8,20}$/, "ean must be the coupon's number from get_cumulus_coupons")
+    .describe("The coupon's ean from get_cumulus_coupons."),
+});

@@ -173,6 +173,10 @@ These are what Claude calls behind the scenes. You don't need them to use it.
 | `get_profile` | Your name, email and language. |
 | `get_addresses` | Your saved delivery and billing addresses. |
 | `get_shopping_lists` | Your shopping lists by name, for people with more than one. |
+| `create_shopping_list` | Start a new, empty list. |
+| `rename_shopping_list` | Give a list a new name. |
+| `delete_shopping_list` | Delete a list with its items. Only after you confirm, and never your only list. |
+| `set_item_note` | Add a note to an item, such as "laktosefrei". |
 | `get_basket` | What's in your basket. |
 | `add_to_basket` | Add a product (1 by default). |
 | `update_basket_quantity` | Set how many of an item you want (0 removes it). |
@@ -183,7 +187,10 @@ These are what Claude calls behind the scenes. You don't need them to use it.
 | `get_cumulus_status` | Your Cumulus card: points collected this period, card number, cardholder, memberships. |
 | `get_in_store_receipts` | Your in-store receipts (Kassenbons) for a date range. |
 | `get_receipt_details` | A link to see one receipt's items. |
-| `get_cumulus_coupons` | Your current personal Cumulus coupons. |
+| `get_cumulus_coupons` | Your current personal Cumulus coupons, and which can be activated. |
+| `activate_cumulus_coupon` | Put a coupon on your Cumulus card for your next purchase. Nothing is bought. |
+| `deactivate_cumulus_coupon` | Take a coupon off the card again. |
+| `get_cumulus_bons` | Your Cumulus bons (vouchers). Read only: you redeem them at checkout. |
 
 <details>
 <summary><b>How it works</b></summary>
