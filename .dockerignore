@@ -1,0 +1,6 @@
+# Only package.json, the lock file, tsconfig.json and src/ go into the build.
+*
+!package.json
+!package-lock.json
+!tsconfig.json
+!src/

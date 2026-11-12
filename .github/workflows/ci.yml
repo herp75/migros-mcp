@@ -4,6 +4,7 @@ name: CI
 # secrets, no publishing, no network calls to Migros (the tests are offline).
 
 on:
+  workflow_call: # from release.yml
   pull_request:
   push:
     branches: [main]

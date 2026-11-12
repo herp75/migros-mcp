@@ -4,6 +4,7 @@ name: Security
 # review of new dependencies on pull requests. Read-only, no secrets.
 
 on:
+  workflow_call: # from release.yml
   push:
     branches: [main]
   pull_request:

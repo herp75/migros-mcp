@@ -9,7 +9,7 @@ not in a public issue. Don't include your Migros password, setup key, cookies or
 
 ## Supported versions
 
-Only the latest release gets fixes.
+Only the latest release of this fork (herp75/migros-mcp) gets fixes.
 
 ## What this server holds and can do
 
@@ -35,6 +35,8 @@ Only the latest release gets fixes.
 ## Using it safely
 
 - Use a password for Migros that you use nowhere else.
-- Prefer the Claude Desktop installer: it keeps the password and setup key in your computer's
-  keychain. Config files of other apps keep them in plain text.
-- Don't share `session.json` or your app's MCP config file.
+- Keep the password and setup key in an env file only you can read (`chmod 600`), passed with
+  `--env-file`, not in your app's MCP config file.
+- Use the Docker image from `ghcr.io/herp75/migros-mcp`. It runs as an unprivileged user,
+  ships without npm, and is signed (see README).
+- Don't share `session.json`, the `migros-mcp` volume or your env file.
