@@ -2,3 +2,6 @@ node_modules
 dist
 .env
 *.mcpb
+# Live tests: test-account credentials and the saved test session (never commit)
+.env.live
+.live-session/
