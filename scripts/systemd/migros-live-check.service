@@ -1,5 +1,5 @@
 # Weekly live check with the Migros test account, inside the published image
-# (see scripts/migros-live-check.sh; needs podman and cosign).
+# (see scripts/migros-live-check.sh; needs podman, skopeo and cosign).
 # Install: copy this file and migros-live-check.timer to ~/.config/systemd/user/,
 # adjust the path below if the repo lives elsewhere, then:
 #   systemctl --user daemon-reload && systemctl --user enable --now migros-live-check.timer
