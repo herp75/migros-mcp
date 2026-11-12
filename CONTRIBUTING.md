@@ -47,8 +47,9 @@ How the code fits together, and a checklist for adding a tool: [docs/architectur
     `MIGROS_TEST_PASSWORD` and, for 2FA, `MIGROS_TEST_TOTP_SECRET`.
   - `--write` changes the basket, a temporary shopping list and one coupon, and puts
     everything back.
-  - Migros blocks logins from cloud servers, so this runs on a computer, not on GitHub (see
-    `scripts/migros-live-check.sh`).
+  - Migros blocks logins from cloud servers, so this runs on a computer, not on GitHub.
+    `scripts/migros-live-check.sh` runs it weekly inside the published, signed image (podman
+    and cosign needed).
 - Live checks print tool names and counts only. Don't add output with names, addresses or order
   data: logs get shared.
 
