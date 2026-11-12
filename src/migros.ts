@@ -41,7 +41,7 @@ async function withToken<T>(fn: (token: string) => Promise<T>): Promise<T> {
   try {
     const token = await getToken();
     return await fn(token);
-  } catch (error) {
+  } catch {
     // Token might have expired, try once more with a fresh one
     clearToken();
     const token = await getToken();
@@ -62,6 +62,7 @@ export async function searchProducts(
   return withToken(async (token) => {
     const [result, onlineIds] = await Promise.all([
       migros.products.productSearch.searchProduct(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the wrapper types language as a narrow union
         { query, language: language as any },
         {},
         token
@@ -107,6 +108,7 @@ export async function getProductDetails(
       ? { migrosIds: productIds.join(",") }
       : { uids: productIds };
     const result = await migros.products.productDisplay.getProductDetails(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the wrapper's params type has no `uids`
       params as any,
       token
     );
@@ -120,6 +122,7 @@ export async function getStock(
 ): Promise<{ catalogItemId: string; stock: number | null }> {
   return withToken(async (token) => {
     const result = await migros.products.productStock.getProductSupply(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the wrapper's params type is incomplete
       { pids: productId, costCenterIds: storeId } as any,
       token
     );

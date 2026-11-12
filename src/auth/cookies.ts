@@ -1,5 +1,4 @@
 import fs from "node:fs";
-import path from "node:path";
 import { configDir, sessionFile } from "./paths.js";
 import { registerSecret } from "../security.js";
 

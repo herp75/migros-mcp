@@ -50,6 +50,7 @@ export function register(
   description: string,
   shape: ZodRawShape,
   annotations: ToolAnnotations,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- each tool's args are checked by its zod schema
   handler: (args: any) => Promise<string>
 ): void {
   server.tool(name, description, shape, annotations, async (args: unknown) => {
