@@ -87,15 +87,16 @@ function findCsrf(html: string): string {
 export function findError(html: string): string | null {
   // The Migros login form renders errors in a div with class "info-message-error".
   const m = html.match(/info-message-error[^>]*>[\s\S]*?<div[^>]*>([\s\S]{0,200})</);
-  // Plain text only: drop tags, then any angle bracket left over from a broken
-  // or nested tag (removing tags once can leave "<script" behind).
-  return m
-    ? m[1]
-        .replace(/<[^>]*>/g, "")
-        .replace(/[<>]/g, "")
-        .replace(/\s+/g, " ")
-        .trim()
-    : null;
+  if (!m) return null;
+  // Plain text only. Removing tags once can leave a new tag behind
+  // ("<scr<b>ipt>"), so repeat until nothing changes, then drop any stray bracket.
+  let text = m[1];
+  let previous;
+  do {
+    previous = text;
+    text = text.replace(/<[^<>]*>/g, "");
+  } while (text !== previous);
+  return text.replace(/[<>]/g, "").replace(/\s+/g, " ").trim();
 }
 
 /** The password only ever goes to the login host itself. */
