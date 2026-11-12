@@ -10,7 +10,7 @@ over HTTPS with certificates always checked.
 | Path | Role |
 |---|---|
 | `src/index.ts` | The server: name, version (read from `package.json`), instructions for the client, and every tool registration (name, description, input schema, annotation, handler). |
-| `src/register.ts` | `register()`: wraps a handler, turns its string into MCP content, turns a thrown error into an `isError` result that has gone through `redact()`, and adds the update notice. The annotation sets `READ_ONLY`, `WRITE`, `CREATE` and `DESTRUCTIVE`. |
+| `src/register.ts` | `register()`: registers a tool with the SDK's `registerTool` (name, title, description, input schema, annotation), wraps its handler, turns its string into MCP content, turns a thrown error into an `isError` result that has gone through `redact()`, and adds the update notice. The annotation sets `READ_ONLY`, `WRITE`, `CREATE` and `DESTRUCTIVE`. |
 | `src/schemas.ts` | zod input schemas for every tool, with the limits: plain IDs (`ID_PATTERN`), text and list lengths, number ranges. |
 | `src/security.ts` | `registerSecret()` and `redact()`: masks email, password, setup key, token and cookie values in every form, plus Bearer tokens, JWTs, Cookie headers and OAuth codes by pattern. |
 | `src/tools.ts`, `src/migros.ts`, `src/online.ts`, `src/categories.ts`, `src/recipes.ts` | Tools without an account. Products, stock and stores go through [migros-api-wrapper](https://www.npmjs.com/package/migros-api-wrapper) with a guest token. Online-only products, categories and Migusto recipes go through `src/http.ts`. |
@@ -65,7 +65,7 @@ registered for `redact()` when it's loaded or saved.
 4. **Handler** in the matching `src/auth-tools/*.ts` file. Take a `request` parameter that
    defaults to `api()`. Return compact JSON with the fields a person needs, not Migros' raw
    answer.
-5. **Registration** in `src/index.ts` with the right annotation. Reads are `READ_ONLY`.
+5. **Registration** in `src/index.ts` (`register()` calls the SDK's `registerTool`) with a short `title` and the right annotation. Reads are `READ_ONLY`.
    Anything that removes or overwrites is `DESTRUCTIVE`. A description says what it changes
    and what it never does.
 6. **Manifest:** add the tool to `manifest.json` `tools` (the server test compares the two).

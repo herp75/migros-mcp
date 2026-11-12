@@ -25,6 +25,7 @@ All notable changes to this project are documented here. The format is based on 
 - The update check (only when run from source) asks GitHub for this fork's latest release instead of npm for upstream's package. `package.json`, `manifest.json` and the README link to this fork; the server version is read from `package.json`.
 - The guest token is fetched once for parallel calls, and a timeout or server error no longer triggers a second try with a new token.
 - More robust: the anonymous HTTP client caps answers at 5 MB, a relative silent-login redirect works, a login answer that isn't HTML no longer crashes, cookies Migros deletes are removed from the saved login, and two containers sharing the volume no longer collide when saving it.
+- Tools are registered with the SDK's `registerTool` instead of the deprecated `server.tool`, and each has a short `title` that apps can show (such as "Add to basket"). Names, descriptions, input schemas and annotations are unchanged.
 - Internal: the 429 handling is one helper, `src/types.ts` (unused) is gone, `@modelcontextprotocol/sdk` needs at least 1.32.2 (for zod 4), and the basket tools take a fake request in tests.
 
 - `get_cumulus_coupons` returns each coupon's useful fields (name, texts, discount, minimum purchase, expiry, status, `ean`) plus `canActivate`, without colours and campaign data.

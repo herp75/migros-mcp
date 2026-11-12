@@ -54,13 +54,15 @@ export const DESTRUCTIVE: ToolAnnotations = {
 export function register(
   server: McpServer,
   name: string,
+  /** A short name for people; apps show it instead of `name`. */
+  title: string,
   description: string,
   shape: ZodRawShape,
   annotations: ToolAnnotations,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- each tool's args are checked by its zod schema
   handler: (args: any) => Promise<string>
 ): void {
-  server.tool(name, description, shape, annotations, async (args: unknown) => {
+  server.registerTool(name, { title, description, inputSchema: shape, annotations }, async (args: unknown) => {
     const notice = updateNotice();
     try {
       const text = await handler(args);

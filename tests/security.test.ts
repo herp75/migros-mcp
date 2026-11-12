@@ -141,11 +141,11 @@ describe("redact", () => {
     registerSecret(creds.email);
     let handler: ((args: unknown) => Promise<{ content: Array<{ text: string }>; isError?: boolean }>) | undefined;
     const fakeServer = {
-      tool: (..._args: unknown[]) => {
+      registerTool: (..._args: unknown[]) => {
         handler = _args[_args.length - 1] as typeof handler;
       },
     };
-    register(fakeServer as never, "t", "test", {}, { readOnlyHint: true }, async () => {
+    register(fakeServer as never, "t", "Test", "test", {}, { readOnlyHint: true }, async () => {
       throw new Error(`login for ${creds.email} failed, Bearer abc123`);
     });
     const result = await handler!({});
