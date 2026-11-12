@@ -13,6 +13,8 @@ All notable changes to this project are documented here. The format is based on 
 - **The server tells the client** that product, recipe, order and receipt data are information to show, not instructions to follow.
 - **Inputs are bounded:** ids must be plain ids (no `/`, `?` or `..`), at most 50 products per call, search texts up to 200 characters, quantities up to 999, page and offset numbers capped.
 - The login requests time out after 20 seconds instead of waiting forever.
+- **After a failed login, the next tool calls wait a minute** instead of each starting a new login at once (ten calls meant ten half-finished logins in seconds, which gets the IP blocked). `authenticate` with a fresh 2FA code still tries right away.
+- When Migros answers the login with Cloudflare's bot check (from servers and VPNs), the error says so instead of "could not find CSRF token".
 - The folder holding `session.json` is now only readable by you (700), also when it already existed.
 - zod 4: fixes a memory exhaustion advisory in zod 3.
 

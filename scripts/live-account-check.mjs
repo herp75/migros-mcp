@@ -165,6 +165,9 @@ try {
     check(out.authenticated === true, "not authenticated");
     return totpSecret ? "with setup key" : "without 2FA";
   });
+  // Without a login every other check fails the same way; stop instead of
+  // sending Migros more login attempts.
+  if (!results.at(-1).ok) throw new Error("login failed, the other checks were not run");
 
   await step("get_profile", async () => {
     const out = await call("get_profile");
