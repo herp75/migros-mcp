@@ -1,6 +1,6 @@
 {
   "name": "migros-mcp",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Unofficial MCP server for Migros Switzerland: search products, recipes, stores and promotions. Signed in, it manages your basket and shopping lists, orders, receipts and Cumulus coupons. Never orders or pays.",
   "main": "dist/index.js",
   "bin": {

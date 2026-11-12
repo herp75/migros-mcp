@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format is based on 
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-11-12
+
 ### Changed
 
 - The description in `package.json` and `manifest.json` matches the repository's: it names recipes, shopping lists, receipts and Cumulus coupons, and that it never orders or pays.
