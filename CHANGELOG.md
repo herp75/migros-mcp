@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format is based on 
 
 ## [Unreleased]
 
+### Added
+
+- **Shopping lists:** `create_shopping_list`, `rename_shopping_list`, `delete_shopping_list` (only with `confirm: true`, never the only list) and `set_item_note` (keeps the quantity).
+- **Cumulus:** `activate_cumulus_coupon` and `deactivate_cumulus_coupon` (by the coupon's `ean`; nothing is bought), and `get_cumulus_bons` (read only).
+- All of them use the routes the migros.ch website itself calls (see `docs/website-routes.md`), checked on a test account. The live check covers them: a temporary list is created, renamed, given a noted item and deleted; a coupon is activated and deactivated again.
+
+### Changed
+
+- `get_cumulus_coupons` returns each coupon's useful fields (name, texts, discount, minimum purchase, expiry, status, `ean`) plus `canActivate`, without colours and campaign data.
+- An empty answer from Migros (rename, delete) no longer fails with a JSON error.
+
 ### Security
 
 - **Logins run one at a time.** Tool calls that arrive together no longer each start their own Migros login (repeated half-finished logins get the IP blocked) or overwrite each other's saved cookies. A call whose token was rejected uses the token another call just got instead of refreshing again.

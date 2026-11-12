@@ -75,6 +75,30 @@
     "idempotentHint": true,
     "openWorldHint": true
   },
+  "create_shopping_list": {
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": true
+  },
+  "rename_shopping_list": {
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": true
+  },
+  "delete_shopping_list": {
+    "readOnlyHint": false,
+    "destructiveHint": true,
+    "idempotentHint": true,
+    "openWorldHint": true
+  },
+  "set_item_note": {
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": true
+  },
   "get_orders": {
     "readOnlyHint": true,
     "openWorldHint": true
@@ -100,6 +124,22 @@
     "openWorldHint": true
   },
   "get_cumulus_coupons": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+  },
+  "activate_cumulus_coupon": {
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": true
+  },
+  "deactivate_cumulus_coupon": {
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": true
+  },
+  "get_cumulus_bons": {
     "readOnlyHint": true,
     "openWorldHint": true
   }

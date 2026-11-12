@@ -99,5 +99,7 @@ export async function api(
     const snippet = typeof r.data === "string" ? r.data.slice(0, 200) : JSON.stringify(r.data).slice(0, 200);
     throw new Error(`${method} ${path} -> ${r.status}: ${snippet}`);
   }
+  // Some writes (rename, delete) answer with an empty body.
+  if (r.data === "" || r.data === undefined || r.data === null) return null;
   return typeof r.data === "string" ? JSON.parse(r.data) : r.data;
 }

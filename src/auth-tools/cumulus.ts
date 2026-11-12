@@ -113,24 +113,130 @@ export async function getReceiptDetails(args: { receiptId: string | number }): P
   );
 }
 
+interface Coupon {
+  ean?: string;
+  uniqueId?: string;
+  name?: string;
+  subtitle?: string;
+  description?: string;
+  status?: string;
+  activationDisabled?: boolean;
+  discountAmount?: number;
+  discountType?: string;
+  minimumPurchase?: string;
+  expiryDate?: string;
+  fulfilments?: unknown;
+  redeemableAt?: string;
+  quantity?: number;
+  wholeAssortment?: boolean;
+}
+
+const RETENTION = "/retentionapi/public/web/v1";
+
+/**
+ * The fields of a coupon a person cares about. Colours, campaign ids and
+ * other display data are left out; texts are Migros' own (still data, not
+ * instructions).
+ */
+export function formatCoupon(c: Coupon) {
+  return {
+    ean: c.ean,
+    name: c.name,
+    subtitle: c.subtitle,
+    description: c.description,
+    status: c.status,
+    canActivate: c.status === "AVAILABLE" && !c.activationDisabled,
+    discountAmount: c.discountAmount,
+    discountType: c.discountType,
+    minimumPurchase: c.minimumPurchase,
+    expiryDate: c.expiryDate,
+    redeemableAt: c.redeemableAt,
+    fulfilments: c.fulfilments,
+    quantity: c.quantity,
+    wholeAssortment: c.wholeAssortment,
+  };
+}
+
+/** An authenticated request; tests pass a fake. */
+export type Request = (method: "GET" | "POST", path: string, body?: unknown) => Promise<unknown>;
+const migros: Request = (method, path, body) => api(method, path, body, { creds: credsFromEnv() });
+
+async function coupons(request: Request): Promise<Coupon[]> {
+  // The SPA calls cumulus-coupons with a deliveryRequestKey when in checkout
+  // context (filters to coupons valid for the active delivery). For a general
+  // "what coupons do I have" view, omit the key — the server returns all.
+  const data = await request("GET", `${RETENTION}/cumulus-coupons`);
+  return Array.isArray(data) ? (data as Coupon[]) : ((data as { coupons?: Coupon[] } | null)?.coupons ?? []);
+}
+
 /**
  * Active Cumulus coupons targeted at the user. Migros personalises these based
  * on shopping history — they typically expire after a few weeks.
  */
-export async function getCumulusCoupons(): Promise<string> {
-  // The SPA calls cumulus-coupons with a deliveryRequestKey when in checkout
-  // context (filters to coupons valid for the active delivery). For a general
-  // "what coupons do I have" view, omit the key — the server returns all.
-  const data = await api("GET", "/retentionapi/public/web/v1/cumulus-coupons", undefined, { creds: credsFromEnv() });
-  const list = Array.isArray(data) ? data : ((data as { coupons?: unknown[] }).coupons ?? []);
+export async function getCumulusCoupons(request: Request = migros): Promise<string> {
+  const list = (await coupons(request)).map(formatCoupon);
   return JSON.stringify(
     {
       count: list.length,
       coupons: list,
       hint:
         list.length > 0
-          ? "Each coupon has an id, discount, eligible products / categories, and expiry."
+          ? "status ACTIVE means the coupon is on the Cumulus card for the next purchase. activate_cumulus_coupon " +
+            "and deactivate_cumulus_coupon take the ean."
           : "No active personal coupons.",
+    },
+    null,
+    2
+  );
+}
+
+/**
+ * Put a coupon on the Cumulus card (ACTIVE), or take it off again
+ * (AVAILABLE). This is what the website's coupon switch does; nothing is
+ * bought or redeemed.
+ */
+export async function setCouponActive(
+  args: { ean: string },
+  active: boolean,
+  request: Request = migros
+): Promise<string> {
+  const coupon = (await coupons(request)).find((c) => c.ean === args.ean);
+  if (!coupon) throw new Error(`no coupon with ean ${args.ean}: use get_cumulus_coupons for the eans`);
+  const wanted = active ? "ACTIVE" : "AVAILABLE";
+  if (coupon.status !== wanted) {
+    if (active && coupon.activationDisabled) throw new Error("Migros does not allow activating this coupon");
+    await request(
+      "POST",
+      `${RETENTION}/cumulus-coupons/${encodeURIComponent(args.ean)}/${active ? "activate" : "deactivate"}`,
+      {}
+    );
+  }
+  const after = (await coupons(request)).find((c) => c.ean === args.ean);
+  return JSON.stringify(
+    {
+      ean: args.ean,
+      name: coupon.name,
+      status: after?.status ?? wanted,
+      changed: coupon.status !== wanted,
+    },
+    null,
+    2
+  );
+}
+
+/**
+ * Cumulus bons: the vouchers Cumulus points turn into. Read only; redeeming
+ * one is left to the website, as it spends the voucher.
+ */
+export async function getCumulusBons(request: Request = migros): Promise<string> {
+  const data = await request("GET", `${RETENTION}/cumulus-bons`);
+  const list = Array.isArray(data) ? data : ((data as { bons?: unknown[] } | null)?.bons ?? []);
+  return JSON.stringify(
+    {
+      count: list.length,
+      bons: list,
+      hint:
+        list.length > 0 ? "Bons are redeemed at checkout on migros.ch or in a store." : "No Cumulus bons right now.",
     },
     null,
     2

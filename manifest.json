@@ -79,6 +79,13 @@
     { "name": "get_cumulus_status", "description": "(Auth) Cumulus card: points this period, number, cardholder, memberships" },
     { "name": "get_in_store_receipts", "description": "(Auth) List in-store Migros receipts (Kassenbons) over a date range" },
     { "name": "get_receipt_details", "description": "(Auth) URL to view a single in-store receipt in the browser" },
-    { "name": "get_cumulus_coupons", "description": "(Auth) Active personalized Cumulus coupons" }
+    { "name": "get_cumulus_coupons", "description": "(Auth) Active personalized Cumulus coupons" },
+    { "name": "create_shopping_list", "description": "(Auth) Create a new shopping list" },
+    { "name": "rename_shopping_list", "description": "(Auth) Rename a shopping list" },
+    { "name": "delete_shopping_list", "description": "(Auth) Delete a shopping list (only with confirm: true)" },
+    { "name": "set_item_note", "description": "(Auth) Set the note of an item in a shopping list" },
+    { "name": "activate_cumulus_coupon", "description": "(Auth) Put a personal Cumulus coupon on the card" },
+    { "name": "deactivate_cumulus_coupon", "description": "(Auth) Take a Cumulus coupon off the card again" },
+    { "name": "get_cumulus_bons", "description": "(Auth) Cumulus bons (vouchers)" }
   ]
 }

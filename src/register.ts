@@ -26,6 +26,13 @@ export const WRITE: ToolAnnotations = {
   idempotentHint: true,
   openWorldHint: true,
 };
+/** Creates something new each time it runs (a second call makes a second one). */
+export const CREATE: ToolAnnotations = {
+  readOnlyHint: false,
+  destructiveHint: false,
+  idempotentHint: false,
+  openWorldHint: true,
+};
 /** Removes or overwrites something the user had. */
 export const DESTRUCTIVE: ToolAnnotations = {
   readOnlyHint: false,
