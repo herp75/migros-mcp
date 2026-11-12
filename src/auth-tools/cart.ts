@@ -38,12 +38,9 @@ interface BasketResponse {
 
 /** All of the user's shopping lists, as Migros returns them. */
 async function fetchShoppingLists(): Promise<ShoppingListSummary[]> {
-  const lists = (await api(
-    "GET",
-    "/shopping-list/public/v1/lists/overview",
-    undefined,
-    { creds: credsFromEnv() }
-  )) as ShoppingListSummary[];
+  const lists = (await api("GET", "/shopping-list/public/v1/lists/overview", undefined, {
+    creds: credsFromEnv(),
+  })) as ShoppingListSummary[];
   return lists ?? [];
 }
 
@@ -139,12 +136,9 @@ function formatBasket(data: BasketResponse): string {
  */
 export async function getBasket(args: { shoppingListId?: number } = {}): Promise<string> {
   const shoppingListId = await resolveShoppingListId(args.shoppingListId);
-  const data = (await api(
-    "GET",
-    `/shopping-list/public/v2/list/details?shoppingListId=${shoppingListId}`,
-    undefined,
-    { creds: credsFromEnv() }
-  )) as BasketResponse;
+  const data = (await api("GET", `/shopping-list/public/v2/list/details?shoppingListId=${shoppingListId}`, undefined, {
+    creds: credsFromEnv(),
+  })) as BasketResponse;
   return formatBasket(data);
 }
 
@@ -153,11 +147,7 @@ export async function getBasket(args: { shoppingListId?: number } = {}): Promise
  * target-quantity semantics: quantity=0 removes, quantity=N replaces (not
  * increments). Used by add/update/remove tools below.
  */
-async function setItemQuantity(
-  productId: string,
-  quantity: number,
-  shoppingListId?: number
-): Promise<string> {
+async function setItemQuantity(productId: string, quantity: number, shoppingListId?: number): Promise<string> {
   const listId = await resolveShoppingListId(shoppingListId);
   const data = (await api(
     "PUT",
@@ -198,10 +188,7 @@ export async function updateBasketQuantity(args: {
 }
 
 /** Remove an item entirely (quantity 0). */
-export async function removeFromBasket(args: {
-  productId: string;
-  shoppingListId?: number;
-}): Promise<string> {
+export async function removeFromBasket(args: { productId: string; shoppingListId?: number }): Promise<string> {
   return setItemQuantity(args.productId, 0, args.shoppingListId);
 }
 
@@ -213,12 +200,9 @@ export async function removeFromBasket(args: {
  */
 export async function getCheckoutLink(args: { shoppingListId?: number } = {}): Promise<string> {
   const shoppingListId = await resolveShoppingListId(args.shoppingListId);
-  const data = (await api(
-    "GET",
-    `/shopping-list/public/v2/list/details?shoppingListId=${shoppingListId}`,
-    undefined,
-    { creds: credsFromEnv() }
-  )) as BasketResponse;
+  const data = (await api("GET", `/shopping-list/public/v2/list/details?shoppingListId=${shoppingListId}`, undefined, {
+    creds: credsFromEnv(),
+  })) as BasketResponse;
   const items = (data.categories ?? []).flatMap((c) => c.items ?? []);
   if (items.length === 0) {
     return JSON.stringify(

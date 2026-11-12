@@ -88,11 +88,7 @@ export function saveSession(session: Session): void {
  * Update the jar from a server's Set-Cookie response headers for a given host.
  * Mutates `session.cookies[host]` in place. Caller decides when to persist.
  */
-export function ingestSetCookie(
-  session: Session,
-  host: string,
-  setCookies: string | string[] | undefined
-): void {
+export function ingestSetCookie(session: Session, host: string, setCookies: string | string[] | undefined): void {
   if (!setCookies) return;
   const list = Array.isArray(setCookies) ? setCookies : [setCookies];
   const bag = (session.cookies[host] ??= {});

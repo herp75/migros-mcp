@@ -137,8 +137,9 @@ async function getJwtNow(creds: Credentials | undefined, opts: GetJwtOptions): P
       throw new Error(
         "no cached session and no credentials provided. " +
           "Set MIGROS_EMAIL and MIGROS_PASSWORD to enable login. If the account has 2FA, also set " +
-          "MIGROS_TOTP_SECRET, or call authenticate with the current six-digit code."
-      , { cause: e });
+          "MIGROS_TOTP_SECRET, or call authenticate with the current six-digit code.",
+        { cause: e }
+      );
     }
   }
 

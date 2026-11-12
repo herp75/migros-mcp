@@ -137,7 +137,10 @@ describe("update notice", () => {
   });
 
   it("points at the README's update instructions", () => {
-    assert.match(noticeText("0.5.0", "0.4.1"), /^Update available: migros-mcp 0\.5\.0 is out \(this is 0\.4\.1\)\. How to update: /);
+    assert.match(
+      noticeText("0.5.0", "0.4.1"),
+      /^Update available: migros-mcp 0\.5\.0 is out \(this is 0\.4\.1\)\. How to update: /
+    );
     assert.ok(noticeText("0.5.0", "0.4.1").endsWith(UPDATE_HELP_URL));
   });
 

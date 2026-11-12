@@ -21,7 +21,11 @@ export default tseslint.config(
         // node:test's describe/it return promises the runner tracks itself.
         {
           allowForKnownSafeCalls: [
-            { from: "package", package: "node:test", name: ["describe", "it", "test", "before", "after", "beforeEach", "afterEach"] },
+            {
+              from: "package",
+              package: "node:test",
+              name: ["describe", "it", "test", "before", "after", "beforeEach", "afterEach"],
+            },
           ],
         },
       ],

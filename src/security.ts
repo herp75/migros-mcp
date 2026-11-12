@@ -31,7 +31,10 @@ const PATTERNS: Array<[RegExp, string]> = [
 function formsOf(value: string): string[] {
   const forms = [value, encodeURIComponent(value), encodeURIComponent(value).replace(/%20/g, "+")];
   const json = JSON.stringify(value).slice(1, -1);
-  forms.push(json, json.replace(/[\u007f-￿]/g, (c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0")));
+  forms.push(
+    json,
+    json.replace(/[\u007f-￿]/g, (c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0"))
+  );
   return forms;
 }
 

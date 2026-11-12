@@ -12,7 +12,8 @@ const MAX_IDS = 50;
 /** More of one product than a household buys at once; catches a slip like 10000. */
 export const MAX_QUANTITY = 999;
 
-const id = (what: string) => z.string().regex(ID_PATTERN, `${what} must be a plain id from Migros (letters, digits, - or _)`);
+const id = (what: string) =>
+  z.string().regex(ID_PATTERN, `${what} must be a plain id from Migros (letters, digits, - or _)`);
 const query = () => z.string().max(MAX_QUERY);
 const language = () => z.string().max(5);
 const listId = () => z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
@@ -23,10 +24,7 @@ const listId = () => z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
 
 export const SearchProductsSchema = z.object({
   query: query().describe("Search query for Migros products"),
-  language: language()
-    .optional()
-    .default("de")
-    .describe("Language for results (de, fr, it, en). Default: de"),
+  language: language().optional().default("de").describe("Language for results (de, fr, it, en). Default: de"),
 });
 
 export const GetProductDetailsSchema = z.object({
@@ -56,14 +54,21 @@ export const GetPromotionsSchema = z.object({
 
 export const SearchRecipesSchema = z.object({
   query: query().optional().describe("Free-text search term, e.g. 'pasta carbonara'."),
-  ingredients: z.array(z.string().max(100)).max(20).optional().describe("Filter to recipes that use these ingredients."),
+  ingredients: z
+    .array(z.string().max(100))
+    .max(20)
+    .optional()
+    .describe("Filter to recipes that use these ingredients."),
   language: language().optional().describe("Language code: de, fr, it. Default: de."),
   limit: z.number().int().min(1).max(50).optional().describe("Max recipes to return. Default: 20."),
   offset: z.number().int().min(0).max(10_000).optional().describe("0-based offset for pagination."),
 });
 
 export const GetRecipeDetailsSchema = z.object({
-  slug: z.string().max(300).describe("Recipe slug from search_recipes (the URL-safe name, e.g. 'marroni-aus-dem-ofen')."),
+  slug: z
+    .string()
+    .max(300)
+    .describe("Recipe slug from search_recipes (the URL-safe name, e.g. 'marroni-aus-dem-ofen')."),
   language: language().optional().describe("Language code: de, fr, it. Default: de."),
 });
 
@@ -91,11 +96,15 @@ export const AuthenticateSchema = z.object({
 // ---------------------------------------------------------------------------
 
 export const GetBasketSchema = z.object({
-  shoppingListId: listId().optional().describe("Optional shopping list ID from get_shopping_lists. Omit to use the first list."),
+  shoppingListId: listId()
+    .optional()
+    .describe("Optional shopping list ID from get_shopping_lists. Omit to use the first list."),
 });
 
 export const GetCheckoutLinkSchema = z.object({
-  shoppingListId: listId().optional().describe("Optional shopping list ID from get_shopping_lists. Omit to use the first list."),
+  shoppingListId: listId()
+    .optional()
+    .describe("Optional shopping list ID from get_shopping_lists. Omit to use the first list."),
 });
 
 export const AddToBasketSchema = z.object({
@@ -134,7 +143,9 @@ export const GetOrdersSchema = z.object({
 });
 
 export const GetOrderDetailsSchema = z.object({
-  orderId: z.union([id("orderId"), z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER)]).describe("Order id (numeric). Get from get_orders."),
+  orderId: z
+    .union([id("orderId"), z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER)])
+    .describe("Order id (numeric). Get from get_orders."),
 });
 
 // ---------------------------------------------------------------------------
@@ -156,5 +167,7 @@ export const GetInStoreReceiptsSchema = z.object({
 });
 
 export const GetReceiptDetailsSchema = z.object({
-  receiptId: z.union([id("receiptId"), z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER)]).describe("Receipt id from get_in_store_receipts."),
+  receiptId: z
+    .union([id("receiptId"), z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER)])
+    .describe("Receipt id from get_in_store_receipts."),
 });

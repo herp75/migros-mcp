@@ -55,10 +55,7 @@ async function withToken<T>(fn: (token: string) => Promise<T>): Promise<T> {
  * in-store results (issue #8). If the online search fails, the in-store
  * result is returned unchanged.
  */
-export async function searchProducts(
-  query: string,
-  language: string
-): Promise<SearchResult> {
+export async function searchProducts(query: string, language: string): Promise<SearchResult> {
   return withToken(async (token) => {
     const [result, onlineIds] = await Promise.all([
       migros.products.productSearch.searchProduct(
@@ -98,15 +95,11 @@ export async function getOnlineProductCards(uids: string[]): Promise<unknown[]> 
   }
 }
 
-export async function getProductDetails(
-  productIds: string[]
-): Promise<unknown[]> {
+export async function getProductDetails(productIds: string[]): Promise<unknown[]> {
   return withToken(async (token) => {
     // Detect if IDs are migrosIds (long numeric, 12+ digits) or uids (shorter numeric)
     const isMigrosId = isMigrosIdList(productIds);
-    const params = isMigrosId
-      ? { migrosIds: productIds.join(",") }
-      : { uids: productIds };
+    const params = isMigrosId ? { migrosIds: productIds.join(",") } : { uids: productIds };
     const result = await migros.products.productDisplay.getProductDetails(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the wrapper's params type has no `uids`
       params as any,
@@ -149,11 +142,7 @@ export async function searchStores(query: string): Promise<unknown[]> {
 
 export async function getPromotions(query: string): Promise<unknown> {
   return withToken(async (token) => {
-    const result =
-      await migros.products.productDisplay.getProductPromotionSearch(
-        { query },
-        token
-      );
+    const result = await migros.products.productDisplay.getProductPromotionSearch({ query }, token);
     return result?.items ?? [];
   });
 }

@@ -19,7 +19,12 @@ function fakeGet(reply: HttpResponse) {
 
 const storemap = {
   categories: [
-    { id: "7494731", name: "Früchte & Gemüse", slug: "fruechte-gemuese", children: [{ id: "7494732", name: "Früchte" }] },
+    {
+      id: "7494731",
+      name: "Früchte & Gemüse",
+      slug: "fruechte-gemuese",
+      children: [{ id: "7494732", name: "Früchte" }],
+    },
     { id: "7494735", name: "Pasta, Würzmittel & Konserven", slug: "pasta-wuerzmittel-konserven" },
   ],
 };

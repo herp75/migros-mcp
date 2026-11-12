@@ -21,12 +21,9 @@ interface AddressEntry {
  * Fetch the logged-in customer's profile. Returns formatted JSON for the LLM.
  */
 export async function getProfile(): Promise<string> {
-  const profile = (await api(
-    "GET",
-    "/retentionapi/public/web/v1/customers/profile",
-    undefined,
-    { creds: credsFromEnv() }
-  )) as Record<string, unknown>;
+  const profile = (await api("GET", "/retentionapi/public/web/v1/customers/profile", undefined, {
+    creds: credsFromEnv(),
+  })) as Record<string, unknown>;
 
   return JSON.stringify(
     {

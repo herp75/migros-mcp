@@ -87,7 +87,12 @@ function findCsrf(html: string): string {
 function findError(html: string): string | null {
   // The Migros login form renders errors in a div with class "info-message-error".
   const m = html.match(/info-message-error[^>]*>[\s\S]*?<div[^>]*>([\s\S]{0,200})</);
-  return m ? m[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim() : null;
+  return m
+    ? m[1]
+        .replace(/<[^>]+>/g, "")
+        .replace(/\s+/g, " ")
+        .trim()
+    : null;
 }
 
 /** The password only ever goes to the login host itself. */
@@ -101,9 +106,8 @@ async function get(url: string, session: Session, extra: Record<string, string> 
     const retryAfter = parseRetryAfter(r.headers["retry-after"] as string | undefined);
     setRateLimited(session, retryAfter, "login " + url + " -> 429");
     throw new RateLimitError(
-      "login.migros.ch rate-limited (429) during GET " + url + ". " +
-        "Retry after: " + (retryAfter ?? "unknown") + "s",
-      retryAfter,
+      "login.migros.ch rate-limited (429) during GET " + url + ". " + "Retry after: " + (retryAfter ?? "unknown") + "s",
+      retryAfter
     );
   }
   return r;
@@ -128,9 +132,13 @@ async function postForm(url: string, session: Session, body: Record<string, stri
     const retryAfter = parseRetryAfter(r.headers["retry-after"] as string | undefined);
     setRateLimited(session, retryAfter, "login POST " + url + " -> 429");
     throw new RateLimitError(
-      "login.migros.ch rate-limited (429) during POST " + url + ". " +
-        "Retry after: " + (retryAfter ?? "unknown") + "s",
-      retryAfter,
+      "login.migros.ch rate-limited (429) during POST " +
+        url +
+        ". " +
+        "Retry after: " +
+        (retryAfter ?? "unknown") +
+        "s",
+      retryAfter
     );
   }
   return r;

@@ -26,7 +26,7 @@ describe("totpFromSecret", () => {
   it("rejects a secret with characters outside base32, without quoting the secret", () => {
     assert.throws(
       () => totpFromSecret("NOT-BASE32!", 59),
-      (e: Error) => /not a valid setup key/.test(e.message) && !e.message.includes("!"),
+      (e: Error) => /not a valid setup key/.test(e.message) && !e.message.includes("!")
     );
   });
 });

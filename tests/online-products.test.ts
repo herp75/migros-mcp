@@ -160,10 +160,10 @@ describe("product details fallback", () => {
   it("asks the online shop only for uids without an in-store price", () => {
     // Live 08.11.2026: the partner penne comes back from the in-store details, but with no offer.
     const details = [priced(100002154), priced("100007447"), { uid: 100040201, name: "Penne Rigate" }];
-    assert.deepEqual(
-      uidsNeedingOnlinePrice(["100002154", "100040201", "100007447", "100040190"], details),
-      ["100040201", "100040190"],
-    );
+    assert.deepEqual(uidsNeedingOnlinePrice(["100002154", "100040201", "100007447", "100040190"], details), [
+      "100040201",
+      "100040190",
+    ]);
   });
 
   it("makes no online call when every product has an in-store price", () => {

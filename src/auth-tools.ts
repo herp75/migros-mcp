@@ -14,9 +14,4 @@ export {
   getCheckoutLink,
 } from "./auth-tools/cart.js";
 export { getOrders, getOrderDetails } from "./auth-tools/orders.js";
-export {
-  getCumulusStatus,
-  getInStoreReceipts,
-  getReceiptDetails,
-  getCumulusCoupons,
-} from "./auth-tools/cumulus.js";
+export { getCumulusStatus, getInStoreReceipts, getReceiptDetails, getCumulusCoupons } from "./auth-tools/cumulus.js";
