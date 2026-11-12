@@ -67,7 +67,7 @@ Start a new chat and ask: *"Search Migros for oat milk."*
 
 Optional. Without it, product search, product details, stock, stores, promotions and recipes all work.
 
-With it, Claude can also see and change your basket and look up your orders, in-store receipts and Cumulus points. It **never places an order or pays**. It gives you a checkout link, and you finish on migros.ch yourself.
+With it, Claude can also see and change your basket and shopping lists, look up your orders, in-store receipts and Cumulus points, and put Cumulus coupons on your card. It **never places an order or pays**. It gives you a checkout link, and you finish on migros.ch yourself.
 
 What to enter depends on how you sign in to migros.ch:
 
@@ -93,6 +93,21 @@ In Claude Desktop it goes in the *Migros TOTP Secret* field. Everywhere else, ad
 
 Only codes from an authenticator app work. If your account uses a passkey only, or codes by SMS, add an authenticator app in your Migros account settings first.
 
+## Settings
+
+All settings are environment variables (in Claude Desktop, the fields the installer shows). None is required.
+
+| Variable | Default | What it does |
+|---|---|---|
+| `MIGROS_EMAIL` | none | Your Migros login email. Without email and password, only the tools without an account work. |
+| `MIGROS_PASSWORD` | none | Your Migros password. Only ever sent to `login.migros.ch`. |
+| `MIGROS_TOTP_SECRET` | none | The 2FA setup key, so you're never asked for a code. Works like a second password: keep it as safe. |
+| `MIGROS_MCP_UPDATE_CHECK` | on | `false`, `0`, `off` or `no` turns off the daily check for a newer version. |
+| `MIGROS_API_WRAPPER_USERAGENT` | built in | Overrides the browser name sent with the searches that need no account. Rarely needed. |
+| `XDG_CONFIG_HOME` (Linux), `APPDATA` (Windows) | the usual place | Where the saved login (`migros-mcp/session.json`) is kept. On a Mac it's always `~/Library/Application Support/migros-mcp/`. |
+
+For development only: `MIGROS_TEST_EMAIL`, `MIGROS_TEST_PASSWORD`, `MIGROS_TEST_TOTP_SECRET`, `MIGROS_LIVE_ENV_FILE` and `MIGROS_LIVE_SESSION_DIR` (see [Development](#development)).
+
 ## What you can ask
 
 Without an account:
@@ -110,8 +125,9 @@ With your account:
 - "Add the ingredients for this recipe to my basket"
 - "Show me my last 5 Migros orders"
 - "How much did I spend at Migros last month?"
-- "What was on my last in-store receipt?"
-- "Which Cumulus coupons do I have?"
+- "Which Migros stores did I shop at last month, and for how much?"
+- "Which Cumulus coupons do I have? Activate the one for coffee."
+- "Make a new shopping list for the weekend"
 - "Give me the link to finish my checkout"
 
 ## Updating
@@ -151,7 +167,9 @@ Stuck on an old version with npx? Run `npm cache clean --force` and restart the 
 
 These are what Claude calls behind the scenes. You don't need them to use it.
 
-**Without an account**
+The **Kind** column says what a tool does to your account: *reads*, *changes* (nothing is lost) or *deletes* (removes or overwrites something). Your app uses this to decide when to ask you first. Keep that approval on for anything that isn't *reads*.
+
+**Without an account** (all *reads*)
 
 | Tool | What it does |
 |---|---|
@@ -167,30 +185,30 @@ These are what Claude calls behind the scenes. You don't need them to use it.
 
 **With your account**
 
-| Tool | What it does |
-|---|---|
-| `authenticate` | Sign in with the current 6-digit code. Only used when no setup key is saved. |
-| `get_profile` | Your name, email and language. |
-| `get_addresses` | Your saved delivery and billing addresses. |
-| `get_shopping_lists` | Your shopping lists by name, for people with more than one. |
-| `create_shopping_list` | Start a new, empty list. |
-| `rename_shopping_list` | Give a list a new name. |
-| `delete_shopping_list` | Delete a list with its items. Only after you confirm, and never your only list. |
-| `set_item_note` | Add a note to an item, such as "laktosefrei". |
-| `get_basket` | What's in your basket. |
-| `add_to_basket` | Add a product (1 by default). |
-| `update_basket_quantity` | Set how many of an item you want (0 removes it). |
-| `remove_from_basket` | Remove an item. |
-| `get_orders` | Your online orders, page by page, filterable by status. |
-| `get_order_details` | One order in full. |
-| `get_checkout_link` | A link to finish checkout on migros.ch. |
-| `get_cumulus_status` | Your Cumulus card: points collected this period, card number, cardholder, memberships. |
-| `get_in_store_receipts` | Your in-store receipts (Kassenbons) for a date range. |
-| `get_receipt_details` | A link to see one receipt's items. |
-| `get_cumulus_coupons` | Your current personal Cumulus coupons, and which can be activated. |
-| `activate_cumulus_coupon` | Put a coupon on your Cumulus card for your next purchase. Nothing is bought. |
-| `deactivate_cumulus_coupon` | Take a coupon off the card again. |
-| `get_cumulus_bons` | Your Cumulus bons (vouchers). Read only: you redeem them at checkout. |
+| Tool | Kind | What it does |
+|---|---|---|
+| `authenticate` | changes | Sign in with the current 6-digit code. Only used when no setup key is saved. |
+| `get_profile` | reads | Your name, email and language. |
+| `get_addresses` | reads | Your saved delivery and billing addresses. |
+| `get_shopping_lists` | reads | Your shopping lists by name, for people with more than one. |
+| `create_shopping_list` | changes | Start a new, empty list. |
+| `rename_shopping_list` | changes | Give a list a new name. |
+| `delete_shopping_list` | deletes | Delete a list with its items. Only after you confirm, and never your only list. |
+| `get_basket` | reads | What's in your basket (a shopping list). |
+| `add_to_basket` | changes | Add a product (1 by default). If it's already there, its quantity is set to the new number. |
+| `update_basket_quantity` | deletes | Set how many of an item you want (0 removes it). |
+| `remove_from_basket` | deletes | Remove an item. |
+| `set_item_note` | changes | Add a note to an item, such as "laktosefrei". |
+| `get_checkout_link` | reads | A link to finish checkout on migros.ch. |
+| `get_orders` | reads | Your online orders, page by page, filterable by status. |
+| `get_order_details` | reads | One order in full. |
+| `get_cumulus_status` | reads | Your Cumulus card: points collected this period, card number, cardholder, memberships. |
+| `get_cumulus_coupons` | reads | Your current personal Cumulus coupons, and which can be activated. |
+| `activate_cumulus_coupon` | changes | Put a coupon on your Cumulus card for your next purchase. Nothing is bought. |
+| `deactivate_cumulus_coupon` | changes | Take a coupon off the card again. |
+| `get_cumulus_bons` | reads | Your Cumulus bons (vouchers). You redeem them yourself at checkout. |
+| `get_in_store_receipts` | reads | Your in-store receipts (Kassenbons) for a date range: store, date, amount, points. |
+| `get_receipt_details` | reads | A link to see one receipt's items on migros.ch (the items themselves aren't available to this server). |
 
 <details>
 <summary><b>How it works</b></summary>
@@ -205,6 +223,8 @@ These are what Claude calls behind the scenes. You don't need them to use it.
 </details>
 
 ## Development
+
+How the code is laid out, and how a tool is added: [docs/architecture.md](docs/architecture.md). How to contribute: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ```bash
 git clone https://github.com/lewpgs/migros-mcp.git

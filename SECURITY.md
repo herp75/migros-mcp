@@ -21,7 +21,9 @@ Only the latest release gets fixes.
   HTTPS, with certificates always checked. The login stops if a Migros page or redirect points
   anywhere outside `migros.ch`. Error messages and tool results have these values masked.
 - **What it can do on your account:** read your profile, addresses, orders, receipts and
-  Cumulus data, and change your basket. It **never places an order or pays**.
+  Cumulus data; change your basket and shopping lists (create, rename, delete a list only
+  with an explicit confirmation, never the only one); put Cumulus coupons on your card and
+  take them off. It **never places an order, pays or redeems a voucher**.
 - **Transport:** stdio only. The server opens no network port.
 - **Untrusted content:** product texts, recipes, reviews, order and coupon data come from
   Migros and other people. They are passed to the AI as data. The server tells the client
