@@ -22,11 +22,36 @@ export function client(): AxiosInstance {
   // Lazily build to avoid creating an https.Agent at module-load time.
   if (_client) return _client;
   _client = axios.create({
+    // TLS certificates are verified (Node's default). Never turn that off.
     httpsAgent: new https.Agent({ minVersion: "TLSv1.3" }),
+    // A login page that never answers must not hold a tool call forever.
+    timeout: AUTH_TIMEOUT_MS,
+    // Login pages are a few hundred KB at most.
+    maxContentLength: 5 * 1024 * 1024,
     validateStatus: () => true,
     maxRedirects: 0,
   });
   return _client;
+}
+
+export const AUTH_TIMEOUT_MS = 20_000;
+
+/**
+ * The login sends the password and the session cookies to the addresses that
+ * Migros' pages and redirects name. Only follow those to Migros itself, over
+ * HTTPS: a changed or tampered page must not be able to send them elsewhere.
+ */
+export function migrosUrl(url: string, what: string): URL {
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    throw new Error(`${what}: not a valid address`);
+  }
+  if (u.protocol !== "https:" || !(u.hostname === "migros.ch" || u.hostname.endsWith(".migros.ch"))) {
+    throw new Error(`${what} leads away from migros.ch (${u.protocol}//${u.hostname}), stopped`);
+  }
+  return u;
 }
 
 export function uniformHeaders(host: string, session: Session, extra: Record<string, string> = {}): Record<string, string> {
@@ -83,6 +108,7 @@ export async function silentOAuth(session: Session): Promise<string> {
   const data = typeof r.data === "string" ? JSON.parse(r.data) : r.data;
   const ssoUrl: string | undefined = data?.url;
   if (!ssoUrl) throw new Error("oauth/authorize did not return a sso url");
+  migrosUrl(ssoUrl, "the silent-login address");
 
   // Step 2: hit login.migros.ch with our SSO cookies. With prompt=none, valid
   // cookies redirect with ?code=...&state=...; expired cookies return an error.

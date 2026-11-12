@@ -1,0 +1,106 @@
+{
+  "search_products": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+  },
+  "get_product_details": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+  },
+  "get_stock": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+  },
+  "get_categories": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+  },
+  "search_stores": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+  },
+  "get_promotions": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+  },
+  "search_recipes": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+  },
+  "get_recipe_details": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+  },
+  "get_recipe_products": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+  },
+  "authenticate": {
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": true
+  },
+  "get_profile": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+  },
+  "get_addresses": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+  },
+  "get_shopping_lists": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+  },
+  "get_basket": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+  },
+  "add_to_basket": {
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": true
+  },
+  "update_basket_quantity": {
+    "readOnlyHint": false,
+    "destructiveHint": true,
+    "idempotentHint": true,
+    "openWorldHint": true
+  },
+  "remove_from_basket": {
+    "readOnlyHint": false,
+    "destructiveHint": true,
+    "idempotentHint": true,
+    "openWorldHint": true
+  },
+  "get_orders": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+  },
+  "get_order_details": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+  },
+  "get_checkout_link": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+  },
+  "get_cumulus_status": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+  },
+  "get_in_store_receipts": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+  },
+  "get_receipt_details": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+  },
+  "get_cumulus_coupons": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+  }
+}

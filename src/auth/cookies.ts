@@ -1,6 +1,23 @@
 import fs from "node:fs";
 import path from "node:path";
 import { configDir, sessionFile } from "./paths.js";
+import { registerSecret } from "../security.js";
+
+/**
+ * Cookie values shorter than this are flags and settings ("true", "de"), not
+ * session secrets; masking them would garble ordinary text.
+ */
+const MIN_COOKIE_SECRET_LENGTH = 16;
+
+/** Mask the session's token and cookie values in everything the server says. */
+export function registerSessionSecrets(session: Session): void {
+  registerSecret(session.jwt);
+  for (const bag of Object.values(session.cookies)) {
+    for (const value of Object.values(bag)) {
+      if (value.length >= MIN_COOKIE_SECRET_LENGTH) registerSecret(value);
+    }
+  }
+}
 
 /**
  * Persisted auth state. Lives in the OS config dir, not in the project tree.
@@ -35,7 +52,7 @@ export function loadSession(): Session {
   try {
     const raw = fs.readFileSync(sessionFile(), "utf8");
     const parsed = JSON.parse(raw) as Partial<Session>;
-    return {
+    const session: Session = {
       cookies: parsed.cookies ?? {},
       jwt: parsed.jwt ?? null,
       jwtExp: parsed.jwtExp ?? 0,
@@ -44,6 +61,8 @@ export function loadSession(): Session {
       rateLimitAttempts: parsed.rateLimitAttempts,
       twoFactorRequired: parsed.twoFactorRequired,
     };
+    registerSessionSecrets(session);
+    return session;
   } catch (err) {
     // Missing file (ENOENT) or unreadable: treat as empty.
     if ((err as NodeJS.ErrnoException).code === "ENOENT") return { ...EMPTY, cookies: {} };
@@ -54,8 +73,12 @@ export function loadSession(): Session {
 
 /** Write the session atomically (temp file + rename) to avoid partial writes. */
 export function saveSession(session: Session): void {
+  registerSessionSecrets(session);
   const dir = configDir();
-  fs.mkdirSync(dir, { recursive: true });
+  // Only the user may list or read the saved login. mkdir's mode applies only
+  // when it creates the folder, so tighten one that already exists too.
+  fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+  if (process.platform !== "win32") fs.chmodSync(dir, 0o700);
   const finalPath = sessionFile();
   const tmpPath = `${finalPath}.${process.pid}.tmp`;
   fs.writeFileSync(tmpPath, JSON.stringify(session, null, 2), { mode: 0o600 });

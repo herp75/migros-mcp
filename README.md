@@ -135,8 +135,12 @@ Stuck on an old version with npx? Run `npm cache clean --force` and restart the 
   - Windows: `%APPDATA%\migros-mcp\`
   - Linux: `~/.config/migros-mcp/` (or `$XDG_CONFIG_HOME/migros-mcp/`)
 
-  Deleting that file signs you out.
+  Deleting that file signs you out. Only you can read it (on Mac and Linux).
+- Your email, password, setup key, cookies and access token are masked in error messages.
+- Tools that change your basket are marked as such, so your app can ask you before running them. Leave that approval on.
+- Product texts, recipes and order data come from Migros and other people. migros-mcp tells the AI to treat them as information, not as instructions.
 - It never places orders or pays. `get_checkout_link` gives you a link, and you finish on migros.ch.
+- Found a security problem? See [SECURITY.md](SECURITY.md).
 
 ## Troubleshooting
 
@@ -217,4 +221,4 @@ npx -y @modelcontextprotocol/inspector node dist/index.js
 
 ## License
 
-MIT
+MIT, see [LICENSE](LICENSE).

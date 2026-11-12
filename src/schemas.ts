@@ -1,13 +1,29 @@
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
+// Limits. The AI fills these in, and can be steered by text it read: an id goes
+// into a Migros URL only if it is a plain id, and nothing is unbounded.
+// ---------------------------------------------------------------------------
+
+/** Product, store, order and receipt ids: digits and letters, as Migros uses them. */
+export const ID_PATTERN = /^[A-Za-z0-9_-]{1,40}$/;
+const MAX_QUERY = 200;
+const MAX_IDS = 50;
+/** More of one product than a household buys at once; catches a slip like 10000. */
+export const MAX_QUANTITY = 999;
+
+const id = (what: string) => z.string().regex(ID_PATTERN, `${what} must be a plain id from Migros (letters, digits, - or _)`);
+const query = () => z.string().max(MAX_QUERY);
+const language = () => z.string().max(5);
+const listId = () => z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
+
+// ---------------------------------------------------------------------------
 // Anonymous: products, stores, promotions
 // ---------------------------------------------------------------------------
 
 export const SearchProductsSchema = z.object({
-  query: z.string().describe("Search query for Migros products"),
-  language: z
-    .string()
+  query: query().describe("Search query for Migros products"),
+  language: language()
     .optional()
     .default("de")
     .describe("Language for results (de, fr, it, en). Default: de"),
@@ -15,21 +31,23 @@ export const SearchProductsSchema = z.object({
 
 export const GetProductDetailsSchema = z.object({
   productIds: z
-    .array(z.string())
+    .array(id("productIds"))
+    .min(1)
+    .max(MAX_IDS)
     .describe("Array of product IDs (UIDs) to get details for. Get these from search_products first."),
 });
 
 export const SearchStoresSchema = z.object({
-  query: z.string().describe("Search query for Migros stores (city name, zip code, etc.)"),
+  query: query().describe("Search query for Migros stores (city name, zip code, etc.)"),
 });
 
 export const GetStockSchema = z.object({
-  productId: z.string().describe("Product UID to check stock for. Get this from search_products."),
-  storeId: z.string().describe("Store ID (costCenterId) to check stock at. Get this from search_stores."),
+  productId: id("productId").describe("Product UID to check stock for. Get this from search_products."),
+  storeId: id("storeId").describe("Store ID (costCenterId) to check stock at. Get this from search_stores."),
 });
 
 export const GetPromotionsSchema = z.object({
-  query: z.string().optional().default("").describe("Optional search query to filter promotions"),
+  query: query().optional().default("").describe("Optional search query to filter promotions"),
 });
 
 // ---------------------------------------------------------------------------
@@ -37,23 +55,23 @@ export const GetPromotionsSchema = z.object({
 // ---------------------------------------------------------------------------
 
 export const SearchRecipesSchema = z.object({
-  query: z.string().optional().describe("Free-text search term, e.g. 'pasta carbonara'."),
-  ingredients: z.array(z.string()).optional().describe("Filter to recipes that use these ingredients."),
-  language: z.string().optional().describe("Language code: de, fr, it. Default: de."),
+  query: query().optional().describe("Free-text search term, e.g. 'pasta carbonara'."),
+  ingredients: z.array(z.string().max(100)).max(20).optional().describe("Filter to recipes that use these ingredients."),
+  language: language().optional().describe("Language code: de, fr, it. Default: de."),
   limit: z.number().int().min(1).max(50).optional().describe("Max recipes to return. Default: 20."),
-  offset: z.number().int().min(0).optional().describe("0-based offset for pagination."),
+  offset: z.number().int().min(0).max(10_000).optional().describe("0-based offset for pagination."),
 });
 
 export const GetRecipeDetailsSchema = z.object({
-  slug: z.string().describe("Recipe slug from search_recipes (the URL-safe name, e.g. 'marroni-aus-dem-ofen')."),
-  language: z.string().optional().describe("Language code: de, fr, it. Default: de."),
+  slug: z.string().max(300).describe("Recipe slug from search_recipes (the URL-safe name, e.g. 'marroni-aus-dem-ofen')."),
+  language: language().optional().describe("Language code: de, fr, it. Default: de."),
 });
 
 export const GetRecipeProductsSchema = z.object({
-  recipeId: z.string().describe("Numeric recipe id from search_recipes (e.g. '39632'). NOT the slug."),
-  language: z.string().optional().describe("Language code: de, fr, it. Default: de."),
+  recipeId: z.string().max(20).describe("Numeric recipe id from search_recipes (e.g. '39632'). NOT the slug."),
+  language: language().optional().describe("Language code: de, fr, it. Default: de."),
   limit: z.number().int().min(1).max(100).optional().describe("Max products to return. Default: 50."),
-  offset: z.number().int().min(0).optional().describe("0-based offset for pagination."),
+  offset: z.number().int().min(0).max(10_000).optional().describe("0-based offset for pagination."),
 });
 
 // ---------------------------------------------------------------------------
@@ -73,33 +91,34 @@ export const AuthenticateSchema = z.object({
 // ---------------------------------------------------------------------------
 
 export const GetBasketSchema = z.object({
-  shoppingListId: z.number().optional().describe("Optional shopping list ID from get_shopping_lists. Omit to use the first list."),
+  shoppingListId: listId().optional().describe("Optional shopping list ID from get_shopping_lists. Omit to use the first list."),
 });
 
 export const GetCheckoutLinkSchema = z.object({
-  shoppingListId: z.number().optional().describe("Optional shopping list ID from get_shopping_lists. Omit to use the first list."),
+  shoppingListId: listId().optional().describe("Optional shopping list ID from get_shopping_lists. Omit to use the first list."),
 });
 
 export const AddToBasketSchema = z.object({
-  productId: z.string().describe("Product UID from search_products (e.g. '100049709')."),
+  productId: id("productId").describe("Product UID from search_products (e.g. '100049709')."),
   quantity: z
     .number()
     .int()
     .min(1)
+    .max(MAX_QUANTITY)
     .optional()
     .describe("Target quantity. Defaults to 1. REPLACES existing quantity, not increment."),
-  shoppingListId: z.number().optional().describe("Optional list ID from get_shopping_lists; omit to use the first list."),
+  shoppingListId: listId().optional().describe("Optional list ID from get_shopping_lists; omit to use the first list."),
 });
 
 export const UpdateBasketQuantitySchema = z.object({
-  productId: z.string().describe("Product UID."),
-  quantity: z.number().int().min(0).describe("Exact target quantity. 0 removes the item."),
-  shoppingListId: z.number().optional(),
+  productId: id("productId").describe("Product UID."),
+  quantity: z.number().int().min(0).max(MAX_QUANTITY).describe("Exact target quantity. 0 removes the item."),
+  shoppingListId: listId().optional(),
 });
 
 export const RemoveFromBasketSchema = z.object({
-  productId: z.string().describe("Product UID to remove from the basket."),
-  shoppingListId: z.number().optional(),
+  productId: id("productId").describe("Product UID to remove from the basket."),
+  shoppingListId: listId().optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -111,11 +130,11 @@ export const GetOrdersSchema = z.object({
     .enum(["PENDING", "DELIVERED", "CANCELLED", "ALL"])
     .optional()
     .describe("Filter by order status. Default: ALL."),
-  page: z.number().int().min(0).optional().describe("0-based page number. Default: 0."),
+  page: z.number().int().min(0).max(1_000).optional().describe("0-based page number. Default: 0."),
 });
 
 export const GetOrderDetailsSchema = z.object({
-  orderId: z.union([z.string(), z.number()]).describe("Order id (numeric). Get from get_orders."),
+  orderId: z.union([id("orderId"), z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER)]).describe("Order id (numeric). Get from get_orders."),
 });
 
 // ---------------------------------------------------------------------------
@@ -137,5 +156,5 @@ export const GetInStoreReceiptsSchema = z.object({
 });
 
 export const GetReceiptDetailsSchema = z.object({
-  receiptId: z.union([z.string(), z.number()]).describe("Receipt id from get_in_store_receipts."),
+  receiptId: z.union([id("receiptId"), z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER)]).describe("Receipt id from get_in_store_receipts."),
 });

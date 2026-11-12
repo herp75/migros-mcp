@@ -41,7 +41,53 @@ export interface GetJwtOptions {
   tryLoginWithoutCode?: boolean;
 }
 
-export async function getJwt(creds?: Credentials, opts: GetJwtOptions = {}): Promise<string> {
+/**
+ * Runs logins one at a time. Without this, tool calls that arrive together
+ * (clients often send several at once) would each start their own login:
+ * Migros sees repeated half-finished logins and blocks the IP, and each login
+ * overwrites the cookies the other one saved. The second caller waits, then
+ * finds the fresh token in the saved session and doesn't log in again.
+ */
+let queue: Promise<unknown> = Promise.resolve();
+
+/** A refresh was needed, but login.migros.ch is in a rate-limit cooldown. */
+export class CooldownError extends Error {}
+
+export function serialized<T>(task: () => Promise<T>): Promise<T> {
+  const run = queue.then(task, task);
+  queue = run.catch(() => undefined);
+  return run;
+}
+
+export function getJwt(creds?: Credentials, opts: GetJwtOptions = {}): Promise<string> {
+  return serialized(() => getJwtNow(creds, opts));
+}
+
+/**
+ * A fresh token after Migros rejected `rejected` with a 401. If another call
+ * already replaced it meanwhile, that one is used instead of refreshing again.
+ */
+export function refreshJwt(rejected: string): Promise<string> {
+  return serialized(async () => {
+    const session = loadSession();
+    if (session.jwt && session.jwt !== rejected) return session.jwt;
+    if (isRateLimited(session)) {
+      const until = session.rateLimitedUntil ? new Date(session.rateLimitedUntil).toISOString() : "unknown time";
+      throw new CooldownError(`token rejected, but login.migros.ch is rate-limited until ${until}, cannot refresh`);
+    }
+    try {
+      const jwt = await silentOAuth(session);
+      saveSession(session);
+      return jwt;
+    } catch (e) {
+      // Save the cooldown silentOAuth just set, so the next call doesn't retry.
+      if (e instanceof RateLimitError) saveSession(session);
+      throw e;
+    }
+  });
+}
+
+async function getJwtNow(creds: Credentials | undefined, opts: GetJwtOptions): Promise<string> {
   const session: Session = loadSession();
 
   // --- Rate-limit cooldown guard ---

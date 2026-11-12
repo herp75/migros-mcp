@@ -23,8 +23,11 @@ describe("totpFromSecret", () => {
     assert.equal(totpFromSecret("gezd gnbv gy3t qojq gezd gnbv gy3t qojq==", 59), "287082");
   });
 
-  it("rejects a secret with characters outside base32", () => {
-    assert.throws(() => totpFromSecret("NOT-BASE32!", 59), /invalid base32/);
+  it("rejects a secret with characters outside base32, without quoting the secret", () => {
+    assert.throws(
+      () => totpFromSecret("NOT-BASE32!", 59),
+      (e: Error) => /not a valid setup key/.test(e.message) && !e.message.includes("!"),
+    );
   });
 });
 
