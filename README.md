@@ -207,6 +207,17 @@ npm run build
 npm test
 ```
 
+Before a pull request, run the same checks as CI:
+
+```bash
+npm run typecheck      # TypeScript, including the tests
+npm run lint           # ESLint
+npm run format:check   # Prettier (npm run format fixes it)
+npm run test:coverage  # tests, failing below 80 % line coverage of src/
+```
+
+`git config blame.ignoreRevsFile .git-blame-ignore-revs` hides the one big formatting commit from `git blame`.
+
 Check the tools that need no account against the live Migros website. GitHub also runs this every Monday, so a change on Migros' side shows up early:
 
 ```bash
