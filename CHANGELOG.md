@@ -10,6 +10,8 @@ All notable changes to this project are documented here. The format is based on 
 - **Cumulus:** `activate_cumulus_coupon` and `deactivate_cumulus_coupon` (by the coupon's `ean`; nothing is bought), and `get_cumulus_bons` (read only).
 - All of them use the routes the migros.ch website itself calls (see `docs/website-routes.md`), checked on a test account. The live check covers them: a temporary list is created, renamed, given a noted item and deleted; a coupon is activated and deactivated again.
 
+- Documentation: a **Settings** table in the README (every environment variable, with its default), a **Kind** column (reads, changes, deletes) in the tool table, `docs/architecture.md` (modules, login and session, a checklist for adding a tool) and `CONTRIBUTING.md` (checks, live-check rules, what never goes into an issue or commit).
+
 ### Changed
 
 - `get_cumulus_coupons` returns each coupon's useful fields (name, texts, discount, minimum purchase, expiry, status, `ean`) plus `canActivate`, without colours and campaign data.
