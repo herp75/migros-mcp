@@ -21,7 +21,8 @@
     "lint": "eslint .",
     "format": "prettier --write src tests scripts eslint.config.js",
     "format:check": "prettier --check src tests scripts eslint.config.js",
-    "typecheck": "tsc --noEmit -p tsconfig.test.json"
+    "typecheck": "tsc --noEmit -p tsconfig.test.json",
+    "live-account": "node scripts/live-account-check.mjs"
   },
   "repository": {
     "type": "git",
