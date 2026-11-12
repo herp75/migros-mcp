@@ -4,17 +4,24 @@ All notable changes to this project are documented here. The format is based on 
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-12
+
 ### Added
 
 - **Shopping lists:** `create_shopping_list`, `rename_shopping_list`, `delete_shopping_list` (only with `confirm: true`, never the only list) and `set_item_note` (keeps the quantity).
 - **Cumulus:** `activate_cumulus_coupon` and `deactivate_cumulus_coupon` (by the coupon's `ean`; nothing is bought), and `get_cumulus_bons` (read only).
 - All of them use the routes the migros.ch website itself calls (see `docs/website-routes.md`), checked on a test account. The live check covers them: a temporary list is created, renamed, given a noted item and deleted; a coupon is activated and deactivated again.
-
 - Documentation: a **Settings** table in the README (every environment variable, with its default), a **Kind** column (reads, changes, deletes) in the tool table, `docs/architecture.md` (modules, login and session, a checklist for adding a tool) and `CONTRIBUTING.md` (checks, live-check rules, what never goes into an issue or commit).
-
 - **Docker image** `ghcr.io/herp75/migros-mcp`: Node 24 Alpine pinned by digest, runs as an unprivileged user, no npm at runtime, the saved login in the volume `/config`, the npm update notice off. Built and scanned with Trivy on every pull request; pushed from `main` (`edge`) and from release tags, for amd64 and arm64, with provenance, SBOM and a keyless cosign signature.
 - **Release workflow for this fork:** on a `vX.Y.Z` tag it checks that every version file and the CHANGELOG agree and that the tag is on `main`, runs CI and the security checks, pushes the image, creates the GitHub Release and publishes `server.json` to the MCP Registry as `io.github.herp75/migros-mcp`. Upstream's npm and `.mcpb` jobs are gone: the npm name belongs to upstream.
 - Dependabot also updates the Docker base image.
+- `LICENSE` (MIT, as `package.json` already said) and `SECURITY.md`.
+- ESLint (including the checks for unhandled promises) and Prettier, with `npm run lint`, `format`, `format:check`, `typecheck` and `test:coverage`. The code was formatted once in its own commit, listed in `.git-blame-ignore-revs`.
+- CI also type-checks the tests, lints, checks formatting and fails below 80 % line coverage of `src/`.
+- Security workflow (on every pull request, push to main and weekly): `npm audit` (fails on high), gitleaks secret scan, a guard against turned-off TLS certificate checks or listening on all interfaces, and a dependency review on pull requests (fails on high, refuses GPL/AGPL).
+- CodeQL for TypeScript and the GitHub workflows.
+- Dependabot for npm and GitHub Actions, weekly, grouped, with a two-week cooldown for new releases.
+- Live check with a test account (`npm run live-account`, `scripts/live-account-check.mjs`): every tool that needs a login, and with `--write` a basket round trip (add, checkout link, change quantity, remove) that checks the basket ends up as before. Credentials from the environment or `.env.live` (read literally), the test login kept in `.live-session/`, output without personal data. Migros blocks logins from GitHub's servers (Cloudflare bot check), so the weekly run happens on a computer: `scripts/migros-live-check.sh` with systemd user units in `scripts/systemd/`. The `live` workflow on GitHub (protected `live` environment) can be started by hand.
 
 ### Changed
 
@@ -28,9 +35,10 @@ All notable changes to this project are documented here. The format is based on 
 - Tools are registered with the SDK's `registerTool` instead of the deprecated `server.tool`, and each has a short `title` that apps can show (such as "Add to basket"). Names, descriptions, input schemas and annotations are unchanged.
 - The weekly local live check runs inside the published image (`edge`) after checking its cosign signature, with rootless podman, a read-only root and no capabilities, instead of building `main` and running it as the user. It uses the check script from the commit the image was built from.
 - Internal: the 429 handling is one helper, `src/types.ts` (unused) is gone, `@modelcontextprotocol/sdk` needs at least 1.32.2 (for zod 4), and the basket tools take a fake request in tests.
-
 - `get_cumulus_coupons` returns each coupon's useful fields (name, texts, discount, minimum purchase, expiry, status, `ean`) plus `canActivate`, without colours and campaign data.
 - An empty answer from Migros (rename, delete) no longer fails with a JSON error.
+- The README installs this fork from its Docker image, with the login in an env file only you can read. The npm package and the `.mcpb` installer are upstream's.
+- Needs Node.js 22 or newer (`engines`), as the README and CI already said.
 
 ### Security
 
@@ -47,22 +55,6 @@ All notable changes to this project are documented here. The format is based on 
 - When Migros answers the login with Cloudflare's bot check (from servers and VPNs), the error says so instead of "could not find CSRF token".
 - The folder holding `session.json` is now only readable by you (700), also when it already existed.
 - zod 4: fixes a memory exhaustion advisory in zod 3.
-
-### Added
-
-- `LICENSE` (MIT, as `package.json` already said) and `SECURITY.md`.
-- ESLint (including the checks for unhandled promises) and Prettier, with `npm run lint`, `format`, `format:check`, `typecheck` and `test:coverage`. The code was formatted once in its own commit, listed in `.git-blame-ignore-revs`.
-- CI also type-checks the tests, lints, checks formatting and fails below 80 % line coverage of `src/`.
-- Security workflow (on every pull request, push to main and weekly): `npm audit` (fails on high), gitleaks secret scan, a guard against turned-off TLS certificate checks or listening on all interfaces, and a dependency review on pull requests (fails on high, refuses GPL/AGPL).
-- CodeQL for TypeScript and the GitHub workflows.
-- Dependabot for npm and GitHub Actions, weekly, grouped, with a two-week cooldown for new releases.
-
-- Live check with a test account (`npm run live-account`, `scripts/live-account-check.mjs`): every tool that needs a login, and with `--write` a basket round trip (add, checkout link, change quantity, remove) that checks the basket ends up as before. Credentials from the environment or `.env.live` (read literally), the test login kept in `.live-session/`, output without personal data. Migros blocks logins from GitHub's servers (Cloudflare bot check), so the weekly run happens on a computer: `scripts/migros-live-check.sh` with systemd user units in `scripts/systemd/`. The `live` workflow on GitHub (protected `live` environment) can be started by hand.
-
-### Changed
-
-- The README installs this fork from its Docker image, with the login in an env file only you can read. The npm package and the `.mcpb` installer are upstream's.
-- Needs Node.js 22 or newer (`engines`), as the README and CI already said.
 
 ## [0.5.1] - 2026-11-08
 
