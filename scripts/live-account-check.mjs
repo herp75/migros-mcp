@@ -7,7 +7,8 @@
 //
 // Never run it with your own account. Credentials come from the environment
 // (MIGROS_TEST_EMAIL, MIGROS_TEST_PASSWORD, MIGROS_TEST_TOTP_SECRET) or from
-// .env.live in the repo root (git-ignored, read literally: no $ expansion).
+// .env.live in the repo root, or the file MIGROS_LIVE_ENV_FILE names
+// (git-ignored, mode 600, read literally: no $ expansion).
 // The saved test login lives in .live-session/ (git-ignored), so repeated
 // runs don't need a new login each time; Migros blocks frequent logins.
 //
@@ -47,7 +48,7 @@ function readEnvFile(file) {
   return values;
 }
 
-const fileEnv = readEnvFile(path.join(ROOT, ".env.live"));
+const fileEnv = readEnvFile(process.env.MIGROS_LIVE_ENV_FILE || path.join(ROOT, ".env.live"));
 const test = (key) => process.env[key] || fileEnv[key] || "";
 const email = test("MIGROS_TEST_EMAIL");
 const password = test("MIGROS_TEST_PASSWORD");

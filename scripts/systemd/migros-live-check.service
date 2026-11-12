@@ -1,0 +1,14 @@
+# Weekly live check with the Migros test account (see scripts/migros-live-check.sh).
+# Install: copy this file and migros-live-check.timer to ~/.config/systemd/user/,
+# adjust the path below if the repo lives elsewhere, then:
+#   systemctl --user daemon-reload && systemctl --user enable --now migros-live-check.timer
+# Results: journalctl --user -u migros-live-check
+[Unit]
+Description=Migros live check with the test account
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/code/migros-mcp/scripts/migros-live-check.sh
+TimeoutStartSec=20min

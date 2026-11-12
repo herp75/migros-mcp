@@ -27,7 +27,7 @@ All notable changes to this project are documented here. The format is based on 
 - CodeQL for TypeScript and the GitHub workflows.
 - Dependabot for npm and GitHub Actions, weekly, grouped, with a two-week cooldown for new releases.
 
-- Live check with a test account (`npm run live-account`, `scripts/live-account-check.mjs`): every tool that needs a login, and with `--write` a basket round trip (add, checkout link, change quantity, remove) that checks the basket ends up as before. Credentials from the environment or `.env.live` (read literally), the test login kept in `.live-session/`, output without personal data. Runs weekly on GitHub in the protected `live` environment and opens an issue when it fails.
+- Live check with a test account (`npm run live-account`, `scripts/live-account-check.mjs`): every tool that needs a login, and with `--write` a basket round trip (add, checkout link, change quantity, remove) that checks the basket ends up as before. Credentials from the environment or `.env.live` (read literally), the test login kept in `.live-session/`, output without personal data. Migros blocks logins from GitHub's servers (Cloudflare bot check), so the weekly run happens on a computer: `scripts/migros-live-check.sh` with systemd user units in `scripts/systemd/`. The `live` workflow on GitHub (protected `live` environment) can be started by hand.
 
 ### Changed
 
