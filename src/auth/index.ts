@@ -50,6 +50,21 @@ export interface GetJwtOptions {
  */
 let queue: Promise<unknown> = Promise.resolve();
 
+/**
+ * After a full login failed (wrong password, a bot check, a changed login
+ * page), every tool call would otherwise try again at once: ten calls, ten
+ * half-finished logins in a few seconds, which is what gets an IP blocked.
+ * So wait this long before the next try. Calling authenticate with a fresh
+ * 2FA code tries again right away (the user asked for it).
+ */
+export const LOGIN_BACKOFF_MS = 60_000;
+let failedLogin: { until: number; reason: string } | null = null;
+
+/** For tests only. */
+export function resetLoginBackoff(): void {
+  failedLogin = null;
+}
+
 /** A refresh was needed, but login.migros.ch is in a rate-limit cooldown. */
 export class CooldownError extends Error {}
 
@@ -151,8 +166,16 @@ async function getJwtNow(creds: Credentials | undefined, opts: GetJwtOptions): P
   }
 
   // --- Path 3: full credentialed login ---
+  if (failedLogin && Date.now() < failedLogin.until && !creds.totpCode) {
+    const wait = Math.ceil((failedLogin.until - Date.now()) / 1000);
+    throw new Error(
+      `the last Migros login failed (${failedLogin.reason}). Not trying again for ${wait} s, ` +
+        "so Migros doesn't block this computer."
+    );
+  }
   try {
     const jwt = await fullLogin(session, creds);
+    failedLogin = null;
     // Successful login clears any stale cooldown.
     clearRateLimit(session);
     saveSession(session);
@@ -165,6 +188,9 @@ async function getJwtNow(creds: Credentials | undefined, opts: GetJwtOptions): P
       // so one 429 isn't counted twice by the backoff.
       if (!isRateLimited(session)) setRateLimited(session, e.retryAfterSeconds, e.message);
       saveSession(session);
+    }
+    if (!(e instanceof RateLimitError) && !(e instanceof FreshCodeRequiredError)) {
+      failedLogin = { until: Date.now() + LOGIN_BACKOFF_MS, reason: (e as Error).message };
     }
     if (e instanceof FreshCodeRequiredError) {
       // Remember that this account needs a code. Start from the saved session
