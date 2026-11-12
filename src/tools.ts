@@ -269,8 +269,9 @@ export async function getStock(productId: string, storeId: string): Promise<stri
     return JSON.stringify({
       productId,
       storeId,
-      inStock: false,
-      message: "Product not available at this store or stock data unavailable.",
+      inStock: null,
+      message:
+        "No stock data for this product at this store: it may not be sold there, or Migros has no data. Unknown, not out of stock.",
     });
   }
 

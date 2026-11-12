@@ -9,7 +9,7 @@ over HTTPS with certificates always checked.
 
 | Path | Role |
 |---|---|
-| `src/index.ts` | The server: name, version, instructions for the client, and every tool registration (name, description, input schema, annotation, handler). |
+| `src/index.ts` | The server: name, version (read from `package.json`), instructions for the client, and every tool registration (name, description, input schema, annotation, handler). |
 | `src/register.ts` | `register()`: wraps a handler, turns its string into MCP content, turns a thrown error into an `isError` result that has gone through `redact()`, and adds the update notice. The annotation sets `READ_ONLY`, `WRITE`, `CREATE` and `DESTRUCTIVE`. |
 | `src/schemas.ts` | zod input schemas for every tool, with the limits: plain IDs (`ID_PATTERN`), text and list lengths, number ranges. |
 | `src/security.ts` | `registerSecret()` and `redact()`: masks email, password, setup key, token and cookie values in every form, plus Bearer tokens, JWTs, Cookie headers and OAuth codes by pattern. |
@@ -44,6 +44,11 @@ over HTTPS with certificates always checked.
 - A **failed full login** (wrong password, bot check) blocks further logins for 60 s in this
   process. Only `authenticate` with a fresh code may try right away.
 - If the last login needed a 2FA code and none is available, the password isn't even sent.
+
+**Browser identity.** The login and account calls send a fixed Firefox user agent
+(`src/auth/oauth.ts`) and the website's `peer-id` (`website-js-…`, `src/auth/api.ts`). When
+Migros or Cloudflare start refusing calls that used to work, check these first: compare them
+with what the current website sends.
 
 **`session.json`** sits in `<config dir>/migros-mcp/`. It's written atomically with mode 600
 in a folder with mode 700. It holds cookies, the JWT and the cooldown state. Its secrets are

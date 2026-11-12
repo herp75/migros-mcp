@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import fs from "node:fs";
 import { configDir, sessionFile } from "./paths.js";
 import { registerSecret } from "../security.js";
@@ -79,9 +80,30 @@ export function saveSession(session: Session): void {
   fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
   if (process.platform !== "win32") fs.chmodSync(dir, 0o700);
   const finalPath = sessionFile();
-  const tmpPath = `${finalPath}.${process.pid}.tmp`;
+  // Not just the pid: in a container it is always 1, so two containers sharing
+  // the volume would write the same temp file.
+  const tmpPath = `${finalPath}.${process.pid}.${crypto.randomBytes(6).toString("hex")}.tmp`;
   fs.writeFileSync(tmpPath, JSON.stringify(session, null, 2), { mode: 0o600 });
   fs.renameSync(tmpPath, finalPath);
+}
+
+/** True when the attributes of a Set-Cookie header delete the cookie. Max-Age wins over Expires. */
+function deletes(attributes: string): boolean {
+  let maxAge: string | undefined;
+  let expires: string | undefined;
+  for (const part of attributes.split(";")) {
+    const eq = part.indexOf("=");
+    const key = (eq < 0 ? part : part.slice(0, eq)).trim().toLowerCase();
+    const val = eq < 0 ? "" : part.slice(eq + 1).trim();
+    if (key === "max-age") maxAge = val;
+    if (key === "expires") expires = val;
+  }
+  if (maxAge !== undefined && /^-?\d+$/.test(maxAge)) return Number(maxAge) <= 0;
+  if (expires !== undefined) {
+    const t = Date.parse(expires);
+    return !Number.isNaN(t) && t <= Date.now();
+  }
+  return false;
 }
 
 /**
@@ -93,9 +115,10 @@ export function ingestSetCookie(session: Session, host: string, setCookies: stri
   const list = Array.isArray(setCookies) ? setCookies : [setCookies];
   const bag = (session.cookies[host] ??= {});
   for (const sc of list) {
-    // Take only the "name=value" pair before the first semicolon. Attributes
-    // like Path, Domain, HttpOnly, etc. are intentionally discarded — we don't
-    // re-issue cookies, we just send what we got back to the same host.
+    // Take the "name=value" pair before the first semicolon. Attributes like
+    // Path, Domain and HttpOnly are discarded: we only send back what we got,
+    // to the same host. Expiry is read only to see whether the server deletes
+    // the cookie (Max-Age=0 or an Expires in the past).
     const semi = sc.indexOf(";");
     const pair = semi === -1 ? sc : sc.slice(0, semi);
     const eq = pair.indexOf("=");
@@ -103,7 +126,8 @@ export function ingestSetCookie(session: Session, host: string, setCookies: stri
     const name = pair.slice(0, eq).trim();
     const value = pair.slice(eq + 1).trim();
     if (!name) continue;
-    bag[name] = value;
+    if (deletes(semi === -1 ? "" : sc.slice(semi + 1))) delete bag[name];
+    else bag[name] = value;
   }
 }
 

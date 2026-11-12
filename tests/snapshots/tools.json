@@ -59,7 +59,7 @@
   },
   "add_to_basket": {
     "readOnlyHint": false,
-    "destructiveHint": false,
+    "destructiveHint": true,
     "idempotentHint": true,
     "openWorldHint": true
   },
@@ -83,7 +83,7 @@
   },
   "rename_shopping_list": {
     "readOnlyHint": false,
-    "destructiveHint": false,
+    "destructiveHint": true,
     "idempotentHint": true,
     "openWorldHint": true
   },
@@ -95,7 +95,7 @@
   },
   "set_item_note": {
     "readOnlyHint": false,
-    "destructiveHint": false,
+    "destructiveHint": true,
     "idempotentHint": true,
     "openWorldHint": true
   },

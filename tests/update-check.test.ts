@@ -1,7 +1,7 @@
 /**
  * The update notice: when it appears, how often, and that a broken or odd
- * answer from the npm registry never shows up in a tool result. Offline: the
- * registry is replaced by a stub.
+ * answer from GitHub's release list never shows up in a tool result. Offline:
+ * the request is replaced by a stub.
  */
 
 import { describe, it } from "node:test";
@@ -16,6 +16,7 @@ import {
   parseVersion,
   updateCheckWanted,
   updateNotice,
+  versionOfTag,
 } from "../src/update-check.js";
 import { withNotice } from "../src/register.js";
 
@@ -170,5 +171,14 @@ describe("tool results", () => {
     const answer = [{ type: "text" as const, text: '{"productIds":[1]}' }];
     assert.deepEqual(withNotice(answer, null), answer);
     assert.deepEqual(withNotice(answer, "Update available"), [...answer, { type: "text", text: "Update available" }]);
+  });
+});
+
+describe("versionOfTag", () => {
+  it("takes the version from a release tag", () => {
+    assert.equal(versionOfTag("v0.6.0"), "0.6.0");
+    assert.equal(versionOfTag("0.6.0"), "0.6.0");
+    assert.equal(versionOfTag("vNext"), "vNext");
+    assert.equal(versionOfTag(undefined), undefined);
   });
 });

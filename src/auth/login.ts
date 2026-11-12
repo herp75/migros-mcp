@@ -3,7 +3,7 @@ import type { AxiosResponse } from "axios";
 import type { Session } from "./cookies.js";
 import { ingestSetCookie } from "./cookies.js";
 import { client, migrosUrl, uniformHeaders, silentOAuth } from "./oauth.js";
-import { parseRetryAfter, RateLimitError, setRateLimited } from "./rate-limit.js";
+import { throwIfRateLimited } from "./rate-limit.js";
 
 export interface Credentials {
   email: string;
@@ -84,6 +84,11 @@ export function looksLikeBotCheck(r: AxiosResponse): boolean {
   return r.headers?.["cf-mitigated"] === "challenge" || /challenge-platform|cf-chl-|Just a moment\.\.\./i.test(page);
 }
 
+/** The answer as page text; "" when Migros answered with something else (JSON, nothing). */
+function pageOf(r: AxiosResponse): string {
+  return typeof r.data === "string" ? r.data : "";
+}
+
 function findCsrf(r: AxiosResponse): string {
   const html = typeof r.data === "string" ? r.data : "";
   const m = html.match(/name="_csrf"[^>]*value="([^"]+)"/);
@@ -96,7 +101,9 @@ function findCsrf(r: AxiosResponse): string {
   return m[1];
 }
 
-export function findError(html: string): string | null {
+export function findError(html: unknown): string | null {
+  // An answer that isn't a page (JSON, empty) has no error text to show.
+  if (typeof html !== "string") return null;
   // The Migros login form renders errors in a div with class "info-message-error".
   const m = html.match(/info-message-error[^>]*>[\s\S]*?<div[^>]*>([\s\S]{0,200})</);
   if (!m) return null;
@@ -118,14 +125,7 @@ async function get(url: string, session: Session, extra: Record<string, string> 
   const host = migrosUrl(url, "a login step").host;
   const r = await client().get(url, { headers: uniformHeaders(host, session, { Accept: "text/html", ...extra }) });
   ingestSetCookie(session, host, r.headers["set-cookie"]);
-  if (r.status === 429) {
-    const retryAfter = parseRetryAfter(r.headers["retry-after"] as string | undefined);
-    setRateLimited(session, retryAfter, "login " + url + " -> 429");
-    throw new RateLimitError(
-      "login.migros.ch rate-limited (429) during GET " + url + ". " + "Retry after: " + (retryAfter ?? "unknown") + "s",
-      retryAfter
-    );
-  }
+  throwIfRateLimited(r, session, "GET " + url);
   return r;
 }
 
@@ -144,19 +144,7 @@ async function postForm(url: string, session: Session, body: Record<string, stri
     }),
   });
   ingestSetCookie(session, host, r.headers["set-cookie"]);
-  if (r.status === 429) {
-    const retryAfter = parseRetryAfter(r.headers["retry-after"] as string | undefined);
-    setRateLimited(session, retryAfter, "login POST " + url + " -> 429");
-    throw new RateLimitError(
-      "login.migros.ch rate-limited (429) during POST " +
-        url +
-        ". " +
-        "Retry after: " +
-        (retryAfter ?? "unknown") +
-        "s",
-      retryAfter
-    );
-  }
+  throwIfRateLimited(r, session, "POST " + url);
   return r;
 }
 
@@ -189,7 +177,7 @@ export async function fullLogin(session: Session, creds: Credentials): Promise<s
   });
   let nextUrl = locationOf(r, LOGIN);
   if (!nextUrl) {
-    throw new Error(`email step failed: ${findError(r.data as string) ?? `status ${r.status}`}`);
+    throw new Error(`email step failed: ${findError(r.data) ?? `status ${r.status}`}`);
   }
 
   // 3. Server may steer to /login/passkey if the account has one. Force password.
@@ -198,14 +186,14 @@ export async function fullLogin(session: Session, creds: Credentials): Promise<s
   // 4. GET password page → capture new CSRF + form action.
   r = await get(nextUrl, session);
   csrf = findCsrf(r);
-  const passwordAction = (r.data as string).match(/<form[^>]+action="([^"]*)"/)?.[1] || nextUrl;
+  const passwordAction = pageOf(r).match(/<form[^>]+action="([^"]*)"/)?.[1] || nextUrl;
   const passwordUrl = new URL(passwordAction, nextUrl).toString();
 
   // 5. POST password.
   r = await postForm(passwordUrl, session, { _csrf: csrf, password: creds.password });
   nextUrl = locationOf(r, LOGIN);
   if (!nextUrl) {
-    throw new Error(`password step failed: ${findError(r.data as string) ?? `status ${r.status}`}`);
+    throw new Error(`password step failed: ${findError(r.data) ?? `status ${r.status}`}`);
   }
 
   // 6. Server may steer to /login/passkey for the second factor too. Force authenticator.
@@ -220,12 +208,12 @@ export async function fullLogin(session: Session, creds: Credentials): Promise<s
     const code = otpCodeFor(creds);
     r = await get(nextUrl, session);
     csrf = findCsrf(r);
-    const otpAction = (r.data as string).match(/<form[^>]+action="([^"]*)"/)?.[1] || nextUrl;
+    const otpAction = pageOf(r).match(/<form[^>]+action="([^"]*)"/)?.[1] || nextUrl;
     const otpUrl = new URL(otpAction, nextUrl).toString();
     r = await postForm(otpUrl, session, { _csrf: csrf, code });
     nextUrl = locationOf(r, LOGIN);
     if (!nextUrl) {
-      const why = findError(r.data as string) ?? `status ${r.status}`;
+      const why = findError(r.data) ?? `status ${r.status}`;
       if (creds.totpCode) {
         // A code typed in or read from a password manager may simply have
         // expired: ask for a new one, and keep the real reason in the message.

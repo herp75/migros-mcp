@@ -14,38 +14,49 @@ import {
 
 const migros = new MigrosAPI();
 
-let cachedToken: string | null = null;
+/** The guest token, or the request for one that is under way (shared by parallel calls). */
+let cachedToken: Promise<string> | null = null;
 
-async function getToken(): Promise<string> {
-  if (cachedToken) {
-    return cachedToken;
-  }
-
-  const result = await migros.account.oauth2.loginGuestToken();
-  cachedToken = result.token as string;
-  return cachedToken!;
+function getToken(): Promise<string> {
+  cachedToken ??= migros.account.oauth2.loginGuestToken().then(
+    (result) => result.token as string,
+    (e: unknown) => {
+      cachedToken = null;
+      throw e;
+    }
+  );
+  return cachedToken;
 }
 
 /**
- * Reset the cached token so the next call fetches a fresh one.
- * Useful if a request fails due to token expiry.
+ * True when a failure clearly isn't about the token: a timeout, no
+ * connection, or an HTTP answer other than 401/403. A new token wouldn't
+ * help, and asking again would only double the traffic while Migros has a
+ * problem. Anything else (the wrapper doesn't always say) may be an expired
+ * token.
  */
-function clearToken(): void {
-  cachedToken = null;
+export function notAboutTheToken(e: unknown): boolean {
+  const err = e as { code?: unknown; name?: unknown; response?: { status?: unknown } } | null;
+  const status = err?.response?.status;
+  if (typeof status === "number") return status !== 401 && status !== 403;
+  if (
+    typeof err?.code === "string" &&
+    /^(ECONNABORTED|ETIMEDOUT|ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN)$/.test(err.code)
+  )
+    return true;
+  return err?.name === "TimeoutError" || err?.name === "AbortError";
 }
 
-/**
- * Wrapper that retries once with a fresh token on failure.
- */
+/** Runs `fn` with the guest token; once more with a new token if the first may have expired. */
 async function withToken<T>(fn: (token: string) => Promise<T>): Promise<T> {
+  const used = getToken();
   try {
-    const token = await getToken();
-    return await fn(token);
-  } catch {
-    // Token might have expired, try once more with a fresh one
-    clearToken();
-    const token = await getToken();
-    return await fn(token);
+    return await fn(await used);
+  } catch (e) {
+    if (notAboutTheToken(e)) throw e;
+    // Another call may have replaced it already; only drop the one that failed.
+    if (cachedToken === used) cachedToken = null;
+    return await fn(await getToken());
   }
 }
 

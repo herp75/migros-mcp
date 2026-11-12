@@ -24,7 +24,7 @@ describe("formatCumulusProfile", () => {
     assert.equal(out.cardholder, "Anna Muster");
     assert.deepEqual(out.memberships, ["CUMULUS", "FAMIGROS"]);
     assert.equal(out.isFamigrosMember, true);
-    assert.deepEqual(out.raw, PROFILE);
+    assert.equal(out.raw, undefined, "the raw profile is not passed on");
   });
 
   it("copes with a missing owner and no Famigros membership", () => {

@@ -85,7 +85,7 @@ What to enter depends on how you sign in to migros.ch:
 
 | You sign in with | Enter |
 |---|---|
-| Email and password | Email and password. Done. |
+| Email and password | Email and password. Done. Use a password you use nowhere else: the server keeps it in a file on your computer. |
 | Email, password and a 6-digit code from an authenticator app | Email and password. When Claude needs to sign in, it asks you for the current code. That only happens when Migros ends the saved login, not in every chat. |
 | The same, but you never want to be asked for a code | Email, password and your **setup key** (see below). |
 
@@ -113,8 +113,8 @@ All settings are environment variables. With Docker, put them in `~/.config/migr
 |---|---|---|
 | `MIGROS_EMAIL` | none | Your Migros login email. Without email and password, only the tools without an account work. |
 | `MIGROS_PASSWORD` | none | Your Migros password. Only ever sent to `login.migros.ch`. |
-| `MIGROS_TOTP_SECRET` | none | The 2FA setup key, so you're never asked for a code. Works like a second password: keep it as safe. |
-| `MIGROS_MCP_UPDATE_CHECK` | on; off in the image | `false`, `0`, `off` or `no` turns off the daily check for a newer npm version. |
+| `MIGROS_TOTP_SECRET` | none | The 2FA setup key, so you're never asked for a code. Works like a second password: keep it as safe. With it in the same file as the password, anyone who gets that file has both factors. |
+| `MIGROS_MCP_UPDATE_CHECK` | on; off in the image | `false`, `0`, `off` or `no` turns off the daily check for a newer release of this fork on GitHub (only when run from source). |
 | `MIGROS_API_WRAPPER_USERAGENT` | built in | Overrides the browser name sent with the searches that need no account. Rarely needed. |
 | `XDG_CONFIG_HOME` (Linux), `APPDATA` (Windows) | the usual place; `/config` in the image | Where the saved login (`migros-mcp/session.json`) is kept. On a Mac it's always `~/Library/Application Support/migros-mcp/`. |
 
@@ -159,6 +159,7 @@ New features come with a new minor version (`:0.7`): change the tag in your conf
 - Once you're signed in, the saved login (cookies and an access token) stays on your computer, in `session.json` in the Docker volume `migros-mcp`. `docker volume rm migros-mcp` signs you out. Inside the volume, only the server's user can read it. (Run without Docker, it's in `~/.config/migros-mcp/` on Linux, `~/Library/Application Support/migros-mcp/` on a Mac, `%APPDATA%\migros-mcp\` on Windows.)
 - Your email, password, setup key, cookies and access token are masked in error messages.
 - Tools that change your basket are marked as such, so your app can ask you before running them. Leave that approval on.
+- Give Claude the 6-digit code yourself. Don't let an AI that can act on your account also read your codes (for example from a password manager): then a text it reads could get it to sign in, and the second factor protects nothing.
 - Product texts, recipes and order data come from Migros and other people. migros-mcp tells the AI to treat them as information, not as instructions.
 - It never places orders or pays. `get_checkout_link` gives you a link, and you finish on migros.ch.
 - Found a security problem? See [SECURITY.md](SECURITY.md).
@@ -166,7 +167,7 @@ New features come with a new minor version (`:0.7`): change the tag in your conf
 ## Troubleshooting
 
 - **"Too many requests" or other sign-in errors.** Migros blocks computers that sign in too often. When that happens, migros-mcp stops trying for a while on its own (30 seconds at first, longer if it keeps happening) and keeps using your current login while it's still valid. The error says until when. Wait until then before trying again. Restarting the app over and over, or a wrong password, makes it worse.
-- **Something that used to work fails.** Migros may have changed its website. Update to the newest version (see [Updating](#updating)), and if it still fails, [open an issue](https://github.com/lewpgs/migros-mcp/issues).
+- **Something that used to work fails.** Migros may have changed its website. Update to the newest version (see [Updating](#updating)), and if it still fails, [open an issue](https://github.com/herp75/migros-mcp/issues).
 
 ## Tools
 
@@ -180,7 +181,7 @@ The **Kind** column says what a tool does to your account: *reads*, *changes* (n
 |---|---|
 | `search_products` | Search products by name or keyword, including ones sold only online (such as "Partner" products). |
 | `get_product_details` | Nutrition, ingredients, allergens, price and ratings. Online-only products also get their online price and a Partner flag. |
-| `get_stock` | Whether a product is in stock at a given store. Updated once a day. |
+| `get_stock` | Whether a product is in stock at a given store. Updated once a day. "Unknown" when Migros has no data. |
 | `get_categories` | All Migros product categories. |
 | `search_stores` | Stores near a place, with addresses and opening hours. |
 | `get_promotions` | Current promotions and deals. |
@@ -197,14 +198,14 @@ The **Kind** column says what a tool does to your account: *reads*, *changes* (n
 | `get_addresses` | reads | Your saved delivery and billing addresses. |
 | `get_shopping_lists` | reads | Your shopping lists by name, for people with more than one. |
 | `create_shopping_list` | changes | Start a new, empty list. |
-| `rename_shopping_list` | changes | Give a list a new name. |
+| `rename_shopping_list` | deletes | Give a list a new name (the old one is replaced). |
 | `delete_shopping_list` | deletes | Delete a list with its items. Only after you confirm, and never your only list. |
 | `get_basket` | reads | What's in your basket (a shopping list). |
-| `add_to_basket` | changes | Add a product (1 by default). If it's already there, its quantity is set to the new number. |
+| `add_to_basket` | deletes | Add a product (1 by default). If it's already there, its quantity is **replaced** by the new number, not added to. |
 | `update_basket_quantity` | deletes | Set how many of an item you want (0 removes it). |
 | `remove_from_basket` | deletes | Remove an item. |
-| `set_item_note` | changes | Add a note to an item, such as "laktosefrei". |
-| `get_checkout_link` | reads | A link to finish checkout on migros.ch. |
+| `set_item_note` | deletes | Add a note to an item, such as "laktosefrei" (replaces an earlier note). |
+| `get_checkout_link` | reads | A link to finish checkout on migros.ch. The link is the same for every list: with several lists, check on migros.ch that the right one is shown. |
 | `get_orders` | reads | Your online orders, page by page, filterable by status. |
 | `get_order_details` | reads | One order in full. |
 | `get_cumulus_status` | reads | Your Cumulus card: points collected this period, card number, cardholder, memberships. |
@@ -213,7 +214,7 @@ The **Kind** column says what a tool does to your account: *reads*, *changes* (n
 | `deactivate_cumulus_coupon` | changes | Take a coupon off the card again. |
 | `get_cumulus_bons` | reads | Your Cumulus bons (vouchers). You redeem them yourself at checkout. |
 | `get_in_store_receipts` | reads | Your in-store receipts (Kassenbons) for a date range: store, date, amount, points. |
-| `get_receipt_details` | reads | A link to see one receipt's items on migros.ch (the items themselves aren't available to this server). |
+| `get_receipt_details` | reads | The link to the receipts page on migros.ch, where you open a receipt to see its items (the same link for every receipt; the items aren't available to this server). |
 
 <details>
 <summary><b>How it works</b></summary>
@@ -232,7 +233,7 @@ The **Kind** column says what a tool does to your account: *reads*, *changes* (n
 How the code is laid out, and how a tool is added: [docs/architecture.md](docs/architecture.md). How to contribute: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ```bash
-git clone https://github.com/lewpgs/migros-mcp.git
+git clone https://github.com/herp75/migros-mcp.git
 cd migros-mcp
 npm install
 npm run build

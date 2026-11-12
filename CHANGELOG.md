@@ -18,6 +18,15 @@ All notable changes to this project are documented here. The format is based on 
 
 ### Changed
 
+- `get_stock` says `inStock: null` (unknown) instead of `false` when Migros has no stock data.
+- `get_in_store_receipts` uses Swiss time for "today", so receipts from just after midnight are included. It and `get_receipt_details` say plainly that line items aren't available and the link is the same for every receipt.
+- `get_checkout_link` returns which list it summarised and says that the link doesn't pick a list.
+- `get_cumulus_status` no longer passes the raw Cumulus profile on, only the selected fields.
+- The update check (only when run from source) asks GitHub for this fork's latest release instead of npm for upstream's package. `package.json`, `manifest.json` and the README link to this fork; the server version is read from `package.json`.
+- The guest token is fetched once for parallel calls, and a timeout or server error no longer triggers a second try with a new token.
+- More robust: the anonymous HTTP client caps answers at 5 MB, a relative silent-login redirect works, a login answer that isn't HTML no longer crashes, cookies Migros deletes are removed from the saved login, and two containers sharing the volume no longer collide when saving it.
+- Internal: the 429 handling is one helper, `src/types.ts` (unused) is gone, `@modelcontextprotocol/sdk` needs at least 1.32.2 (for zod 4), and the basket tools take a fake request in tests.
+
 - `get_cumulus_coupons` returns each coupon's useful fields (name, texts, discount, minimum purchase, expiry, status, `ean`) plus `canActivate`, without colours and campaign data.
 - An empty answer from Migros (rename, delete) no longer fails with a JSON error.
 
@@ -26,7 +35,9 @@ All notable changes to this project are documented here. The format is based on 
 - **Logins run one at a time.** Tool calls that arrive together no longer each start their own Migros login (repeated half-finished logins get the IP blocked) or overwrite each other's saved cookies. A call whose token was rejected uses the token another call just got instead of refreshing again.
 - **The login only talks to migros.ch over HTTPS.** It stops if a Migros page or redirect points anywhere else, and the email and password are only ever posted to `login.migros.ch`.
 - **Secrets are masked in error messages:** email, password, setup key, access token, long cookie values, Bearer tokens, JWTs and OAuth codes, also URL-encoded or JSON-escaped. A setup key with a wrong character no longer shows that character.
-- **Tools say what they do:** reads are marked read-only, `update_basket_quantity` and `remove_from_basket` destructive, `add_to_basket` and `authenticate` as changes. Clients use this to decide which calls need approval.
+- **Tools say what they do:** reads are marked read-only; `add_to_basket` (it replaces the quantity), `update_basket_quantity`, `remove_from_basket`, `rename_shopping_list`, `set_item_note` and `delete_shopping_list` destructive; `authenticate` and the coupon tools as changes. Clients use this to decide which calls need approval.
+- **`authenticate` without a code no longer repeats doomed logins.** On a 2FA account without a setup key, it sends the password once; further calls without a code within 60 s answer `fresh_code_required` without contacting Migros.
+- `authenticate` no longer suggests that the AI read the 2FA code from a password manager: the user types it.
 - **The server tells the client** that product, recipe, order and receipt data are information to show, not instructions to follow.
 - **Inputs are bounded:** ids must be plain ids (no `/`, `?` or `..`), at most 50 products per call, search texts up to 200 characters, quantities up to 999, page and offset numbers capped.
 - The login requests time out after 20 seconds instead of waiting forever.

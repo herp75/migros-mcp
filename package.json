@@ -26,13 +26,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lewpgs/migros-mcp.git"
+    "url": "git+https://github.com/herp75/migros-mcp.git"
   },
-  "homepage": "https://github.com/lewpgs/migros-mcp",
+  "homepage": "https://github.com/herp75/migros-mcp",
   "bugs": {
-    "url": "https://github.com/lewpgs/migros-mcp/issues"
+    "url": "https://github.com/herp75/migros-mcp/issues"
   },
-  "author": "lewpgs",
+  "author": "lewpgs and contributors (fork: herp75)",
   "keywords": [
     "mcp",
     "migros",
@@ -43,7 +43,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.12.1",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "axios": "^1.15.2",
     "migros-api-wrapper": "^1.1.37",
     "zod": "^4.6.7"
