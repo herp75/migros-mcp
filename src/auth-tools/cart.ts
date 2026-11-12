@@ -1,5 +1,8 @@
 import { api } from "../auth/api.js";
 import { credsFromEnv } from "./_shared.js";
+import type { Request } from "./lists.js";
+
+const migros: Request = (method, path, body) => api(method, path, body, { creds: credsFromEnv() });
 
 interface ShoppingListSummary {
   shoppingListId: number;
@@ -37,10 +40,8 @@ interface BasketResponse {
 }
 
 /** All of the user's shopping lists, as Migros returns them. */
-async function fetchShoppingLists(): Promise<ShoppingListSummary[]> {
-  const lists = (await api("GET", "/shopping-list/public/v1/lists/overview", undefined, {
-    creds: credsFromEnv(),
-  })) as ShoppingListSummary[];
+async function fetchShoppingLists(request: Request): Promise<ShoppingListSummary[]> {
+  const lists = (await request("GET", "/shopping-list/public/v1/lists/overview")) as ShoppingListSummary[] | null;
   return lists ?? [];
 }
 
@@ -48,9 +49,9 @@ async function fetchShoppingLists(): Promise<ShoppingListSummary[]> {
  * Resolve the user's primary shopping list id, calling /lists/overview if not
  * provided. Most users have a single list named "Shopping list".
  */
-async function resolveShoppingListId(provided?: number): Promise<number> {
+async function resolveShoppingListId(provided: number | undefined, request: Request): Promise<number> {
   if (typeof provided === "number") return provided;
-  const lists = await fetchShoppingLists();
+  const lists = await fetchShoppingLists(request);
   if (!lists.length) throw new Error("no shopping lists found for this account");
   return lists[0].shoppingListId;
 }
@@ -87,8 +88,8 @@ export function formatShoppingLists(lists: ShoppingListSummary[] | null | undefi
  * several lists: the basket tools otherwise use whichever list Migros returns
  * first, which isn't always the one they mean.
  */
-export async function getShoppingLists(): Promise<string> {
-  return formatShoppingLists(await fetchShoppingLists());
+export async function getShoppingLists(request: Request = migros): Promise<string> {
+  return formatShoppingLists(await fetchShoppingLists(request));
 }
 
 /**
@@ -134,11 +135,12 @@ function formatBasket(data: BasketResponse): string {
  * items + totals. Product names are not returned by this endpoint — call
  * get_product_details with the returned ids to enrich.
  */
-export async function getBasket(args: { shoppingListId?: number } = {}): Promise<string> {
-  const shoppingListId = await resolveShoppingListId(args.shoppingListId);
-  const data = (await api("GET", `/shopping-list/public/v2/list/details?shoppingListId=${shoppingListId}`, undefined, {
-    creds: credsFromEnv(),
-  })) as BasketResponse;
+export async function getBasket(args: { shoppingListId?: number } = {}, request: Request = migros): Promise<string> {
+  const shoppingListId = await resolveShoppingListId(args.shoppingListId, request);
+  const data = (await request(
+    "GET",
+    `/shopping-list/public/v2/list/details?shoppingListId=${shoppingListId}`
+  )) as BasketResponse;
   return formatBasket(data);
 }
 
@@ -147,17 +149,17 @@ export async function getBasket(args: { shoppingListId?: number } = {}): Promise
  * target-quantity semantics: quantity=0 removes, quantity=N replaces (not
  * increments). Used by add/update/remove tools below.
  */
-async function setItemQuantity(productId: string, quantity: number, shoppingListId?: number): Promise<string> {
-  const listId = await resolveShoppingListId(shoppingListId);
-  const data = (await api(
-    "PUT",
-    "/shopping-list/public/v3/items",
-    {
-      shoppingListId: listId,
-      items: [{ id: productId, quantity, type: "PRODUCT" }],
-    },
-    { creds: credsFromEnv() }
-  )) as BasketResponse;
+async function setItemQuantity(
+  productId: string,
+  quantity: number,
+  shoppingListId: number | undefined,
+  request: Request
+): Promise<string> {
+  const listId = await resolveShoppingListId(shoppingListId, request);
+  const data = (await request("PUT", "/shopping-list/public/v3/items", {
+    shoppingListId: listId,
+    items: [{ id: productId, quantity, type: "PRODUCT" }],
+  })) as BasketResponse;
   return formatBasket(data);
 }
 
@@ -167,29 +169,38 @@ async function setItemQuantity(productId: string, quantity: number, shoppingList
  * underlying API is upsert-to-target. Use update_basket_quantity to set an
  * explicit total when you want increment-like semantics.
  */
-export async function addToBasket(args: {
-  productId: string;
-  quantity?: number;
-  shoppingListId?: number;
-}): Promise<string> {
+export async function addToBasket(
+  args: {
+    productId: string;
+    quantity?: number;
+    shoppingListId?: number;
+  },
+  request: Request = migros
+): Promise<string> {
   const qty = args.quantity ?? 1;
   if (qty < 1) throw new Error("quantity must be >= 1 for add_to_basket; use remove_from_basket to delete");
-  return setItemQuantity(args.productId, qty, args.shoppingListId);
+  return setItemQuantity(args.productId, qty, args.shoppingListId, request);
 }
 
 /** Set an item's exact target quantity. */
-export async function updateBasketQuantity(args: {
-  productId: string;
-  quantity: number;
-  shoppingListId?: number;
-}): Promise<string> {
+export async function updateBasketQuantity(
+  args: {
+    productId: string;
+    quantity: number;
+    shoppingListId?: number;
+  },
+  request: Request = migros
+): Promise<string> {
   if (args.quantity < 0) throw new Error("quantity must be >= 0");
-  return setItemQuantity(args.productId, args.quantity, args.shoppingListId);
+  return setItemQuantity(args.productId, args.quantity, args.shoppingListId, request);
 }
 
 /** Remove an item entirely (quantity 0). */
-export async function removeFromBasket(args: { productId: string; shoppingListId?: number }): Promise<string> {
-  return setItemQuantity(args.productId, 0, args.shoppingListId);
+export async function removeFromBasket(
+  args: { productId: string; shoppingListId?: number },
+  request: Request = migros
+): Promise<string> {
+  return setItemQuantity(args.productId, 0, args.shoppingListId, request);
 }
 
 /**
@@ -198,11 +209,15 @@ export async function removeFromBasket(args: { productId: string; shoppingListId
  * real browser (Datatrans 3DS / saved-card prompt), so we hand off rather than
  * try to automate the money step. Includes a basket summary for the LLM.
  */
-export async function getCheckoutLink(args: { shoppingListId?: number } = {}): Promise<string> {
-  const shoppingListId = await resolveShoppingListId(args.shoppingListId);
-  const data = (await api("GET", `/shopping-list/public/v2/list/details?shoppingListId=${shoppingListId}`, undefined, {
-    creds: credsFromEnv(),
-  })) as BasketResponse;
+export async function getCheckoutLink(
+  args: { shoppingListId?: number } = {},
+  request: Request = migros
+): Promise<string> {
+  const shoppingListId = await resolveShoppingListId(args.shoppingListId, request);
+  const data = (await request(
+    "GET",
+    `/shopping-list/public/v2/list/details?shoppingListId=${shoppingListId}`
+  )) as BasketResponse;
   const items = (data.categories ?? []).flatMap((c) => c.items ?? []);
   if (items.length === 0) {
     return JSON.stringify(
@@ -217,6 +232,8 @@ export async function getCheckoutLink(args: { shoppingListId?: number } = {}): P
   return JSON.stringify(
     {
       ok: true,
+      shoppingListId,
+      listName: data.name,
       itemCount: items.length,
       onlineTotal: total,
       freeDelivery,
@@ -225,6 +242,9 @@ export async function getCheckoutLink(args: { shoppingListId?: number } = {}): P
       message: minOk
         ? `Open the checkout URL in your browser to confirm address, delivery slot, and payment, then click "Place order".`
         : `Basket below minimum online order value. Add more items, then re-run get_checkout_link.`,
+      // The URL is the same for every list.
+      listHint:
+        "The link doesn't pick a list. If the user has several, they check on migros.ch that this list is the one shown at checkout.",
     },
     null,
     2

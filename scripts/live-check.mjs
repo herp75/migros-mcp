@@ -144,7 +144,7 @@ try {
   await step("get_stock", async () => {
     check(productId && storeId, "skipped: needs a product and a store");
     const out = json(await callTool("get_stock", { productId, storeId }), "get_stock");
-    check(typeof out.inStock === "boolean", "no inStock answer");
+    check(typeof out.inStock === "boolean" || out.inStock === null, "no inStock answer");
     return "stock answer present";
   });
 

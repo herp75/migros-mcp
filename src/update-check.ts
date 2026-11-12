@@ -1,25 +1,23 @@
 import { createRequire } from "node:module";
 
 /**
- * Tells people when a newer migros-mcp is out.
+ * Tells people who run this fork from source when a newer release is out.
  *
- * npx installs pick up new releases on their own, but the Claude Desktop
- * installer (.mcpb) stays on the version it was installed with, and nothing
- * tells its users that a fix is out. So, at most once a day and only while a
- * tool is being used, the server asks the npm registry for the latest version
- * number. When it is newer than this one, one tool result a day gets an extra
- * line with the update link.
+ * At most once a day and only while a tool is being used, the server asks
+ * GitHub for this fork's latest release (herp75/migros-mcp, not the upstream
+ * npm package, which is a different code base). When it is newer than this
+ * one, one tool result a day gets an extra line with the update link. The
+ * Docker image turns this off: there, the image tag decides the version.
  *
- * Nothing about the user is sent: it is a plain request for public package
- * information. MIGROS_MCP_UPDATE_CHECK=false turns it off (in Claude Desktop,
- * the installer's "Tell me when a new version is out" box sets it).
+ * Nothing about the user is sent: it is a plain request for public release
+ * information. MIGROS_MCP_UPDATE_CHECK=false turns it off.
  */
 
-const LATEST_URL = "https://registry.npmjs.org/migros-mcp/latest";
-export const UPDATE_HELP_URL = "https://github.com/lewpgs/migros-mcp#updating";
+const LATEST_URL = "https://api.github.com/repos/herp75/migros-mcp/releases/latest";
+export const UPDATE_HELP_URL = "https://github.com/herp75/migros-mcp#updating";
 const DAY_MS = 24 * 60 * 60 * 1000;
 const TIMEOUT_MS = 5_000;
-/** The registry's answer is a few KB; anything far bigger is not what we asked for. */
+/** GitHub's answer is some KB; anything far bigger is not what we asked for. */
 const MAX_RESPONSE_CHARS = 200_000;
 
 export type FetchLatest = () => Promise<unknown>;
@@ -50,7 +48,7 @@ export function noticeText(latest: string, current: string): string {
 export function installedVersion(): string | null {
   try {
     // dist/update-check.js and src/update-check.ts both sit one folder below package.json,
-    // in the npm package and in the Claude Desktop installer alike.
+    // in a checkout and in the Docker image alike.
     const v = (createRequire(import.meta.url)("../package.json") as { version?: unknown }).version;
     return parseVersion(v) ? (v as string) : null;
   } catch {
@@ -58,17 +56,22 @@ export function installedVersion(): string | null {
   }
 }
 
-/** Asks the npm registry for the latest published version. Throws on any problem. */
-export const fetchLatestFromNpm: FetchLatest = async () => {
+/** "v1.2.3" (a release tag) -> "1.2.3"; anything else unchanged. */
+export function versionOfTag(tag: unknown): unknown {
+  return typeof tag === "string" && /^v\d/.test(tag) ? tag.slice(1) : tag;
+}
+
+/** Asks GitHub for the fork's latest release. Throws on any problem. */
+export const fetchLatestRelease: FetchLatest = async () => {
   const r = await fetch(LATEST_URL, {
-    headers: { accept: "application/json" },
+    headers: { accept: "application/vnd.github+json", "user-agent": "migros-mcp-update-check" },
     redirect: "error",
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
-  if (!r.ok) throw new Error(`npm registry answered ${r.status}`);
+  if (!r.ok) throw new Error(`GitHub answered ${r.status}`);
   const text = await r.text();
-  if (text.length > MAX_RESPONSE_CHARS) throw new Error("npm registry answer too large");
-  return (JSON.parse(text) as { version?: unknown }).version;
+  if (text.length > MAX_RESPONSE_CHARS) throw new Error("GitHub answer too large");
+  return versionOfTag((JSON.parse(text) as { tag_name?: unknown }).tag_name);
 };
 
 export class UpdateChecker {
@@ -79,7 +82,7 @@ export class UpdateChecker {
 
   constructor(
     private readonly current: string | null,
-    private readonly fetchLatest: FetchLatest = fetchLatestFromNpm,
+    private readonly fetchLatest: FetchLatest = fetchLatestRelease,
     private readonly now: () => number = Date.now
   ) {}
 
@@ -98,7 +101,7 @@ export class UpdateChecker {
       this.fetchLatest()
         .then((v) => {
           // Only a plain version number is kept, so nothing else from the
-          // registry's answer can end up in a tool result.
+          // answer can end up in a tool result.
           if (parseVersion(v)) this.latest = v as string;
         })
         .catch(() => {

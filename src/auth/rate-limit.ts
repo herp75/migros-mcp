@@ -129,3 +129,21 @@ export function rateLimitBlockedMessage(session: { rateLimitedUntil?: number; ra
     `Cached JWT is also expired — cannot re-authenticate until the rate limit clears.`
   );
 }
+
+/**
+ * After a request to the login hosts: on a 429, record the cooldown in the
+ * session and throw a RateLimitError naming the step. Otherwise do nothing.
+ */
+export function throwIfRateLimited(
+  r: { status: number; headers: Record<string, unknown> },
+  session: CooldownState,
+  step: string
+): void {
+  if (r.status !== 429) return;
+  const retryAfter = parseRetryAfter(r.headers["retry-after"] as string | undefined);
+  setRateLimited(session, retryAfter, `${step} -> 429`);
+  throw new RateLimitError(
+    `login.migros.ch rate-limited (429) during ${step}. Retry after: ${retryAfter ?? "unknown"}s`,
+    retryAfter
+  );
+}

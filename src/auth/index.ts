@@ -58,7 +58,7 @@ let queue: Promise<unknown> = Promise.resolve();
  * 2FA code tries again right away (the user asked for it).
  */
 export const LOGIN_BACKOFF_MS = 60_000;
-let failedLogin: { until: number; reason: string } | null = null;
+let failedLogin: { until: number; reason: string; needsCode?: boolean } | null = null;
 
 /** For tests only. */
 export function resetLoginBackoff(): void {
@@ -167,6 +167,8 @@ async function getJwtNow(creds: Credentials | undefined, opts: GetJwtOptions): P
 
   // --- Path 3: full credentialed login ---
   if (failedLogin && Date.now() < failedLogin.until && !creds.totpCode) {
+    // The last try stopped at the 2FA step: only a code helps, so say that.
+    if (failedLogin.needsCode && !creds.totpSecret) throw new FreshCodeRequiredError();
     const wait = Math.ceil((failedLogin.until - Date.now()) / 1000);
     throw new Error(
       `the last Migros login failed (${failedLogin.reason}). Not trying again for ${wait} s, ` +
@@ -191,6 +193,12 @@ async function getJwtNow(creds: Credentials | undefined, opts: GetJwtOptions): P
     }
     if (!(e instanceof RateLimitError) && !(e instanceof FreshCodeRequiredError)) {
       failedLogin = { until: Date.now() + LOGIN_BACKOFF_MS, reason: (e as Error).message };
+    }
+    if (e instanceof FreshCodeRequiredError && !creds.totpCode) {
+      // authenticate without a code sent the password and stopped at the 2FA
+      // step. Calling it again the same way would do the same: wait, unless
+      // a code comes.
+      failedLogin = { until: Date.now() + LOGIN_BACKOFF_MS, reason: "a 2FA code is needed", needsCode: true };
     }
     if (e instanceof FreshCodeRequiredError) {
       // Remember that this account needs a code. Start from the saved session

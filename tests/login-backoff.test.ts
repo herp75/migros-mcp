@@ -83,3 +83,48 @@ describe("login backoff", () => {
     assert.equal(loginPageRequests, 1);
   });
 });
+
+describe("authenticate without a code on a 2FA account", () => {
+  let passwordPosts = 0;
+  beforeEach(() => {
+    passwordPosts = 0;
+    const form = (action: string) => `<form action="${action}"><input name="_csrf" value="t"></form>`;
+    const adapter: AxiosAdapter = async (config: InternalAxiosRequestConfig) => {
+      const url = config.url ?? "";
+      const answer = (status: number, data = "", headers: Record<string, string> = {}) => ({
+        status,
+        statusText: "",
+        headers,
+        data,
+        config,
+      });
+      const method = (config.method ?? "get").toLowerCase();
+      if (url.startsWith("https://www.migros.ch/authentication/public/v1/api/oauth/authorize")) return answer(401);
+      if (method === "get" && url === "https://login.migros.ch/login") return answer(200, form("/login/email"));
+      if (method === "post" && url === "https://login.migros.ch/login/email")
+        return answer(302, "", { location: "/login/password" });
+      if (method === "get" && url === "https://login.migros.ch/login/password")
+        return answer(200, form("/login/password"));
+      if (method === "post" && url === "https://login.migros.ch/login/password") {
+        passwordPosts++;
+        return answer(302, "", { location: "/login/authenticator" });
+      }
+      throw new Error(`unexpected request: ${method} ${url}`);
+    };
+    client().defaults.adapter = adapter;
+  });
+
+  it("sends the password once, then asks for the code without contacting Migros", async () => {
+    for (let i = 0; i < 5; i++) {
+      await assert.rejects(getJwt(creds, { tryLoginWithoutCode: true }), /fresh_code_required/);
+    }
+    assert.equal(passwordPosts, 1, "the password was sent again without a code");
+  });
+
+  it("other tools don't log in at all once the account is known to need a code", async () => {
+    await assert.rejects(getJwt(creds, { tryLoginWithoutCode: true }), /fresh_code_required/);
+    resetLoginBackoff();
+    await assert.rejects(getJwt(creds), /fresh_code_required/);
+    assert.equal(passwordPosts, 1);
+  });
+});

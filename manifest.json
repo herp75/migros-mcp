@@ -5,11 +5,11 @@
   "version": "0.5.1",
   "description": "Search Migros products and (optionally) manage your basket, addresses, and order history through Claude.",
   "author": {
-    "name": "lewpgs"
+    "name": "lewpgs and contributors (fork: herp75)"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/lewpgs/migros-mcp"
+    "url": "https://github.com/herp75/migros-mcp"
   },
   "license": "MIT",
   "server": {

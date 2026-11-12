@@ -33,6 +33,9 @@ function client(): AxiosInstance {
       timeout: 10_000,
       validateStatus: () => true,
       maxRedirects: 0,
+      // Like the login client: real answers are far smaller.
+      maxContentLength: 5 * 1024 * 1024,
+      maxBodyLength: 1024 * 1024,
     });
   }
   return _client;

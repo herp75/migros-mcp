@@ -3,7 +3,7 @@ import axios from "axios";
 import type { AxiosInstance, AxiosResponse } from "axios";
 import type { Session } from "./cookies.js";
 import { cookieHeader, ingestSetCookie } from "./cookies.js";
-import { parseRetryAfter, RateLimitError, setRateLimited, clearRateLimit } from "./rate-limit.js";
+import { clearRateLimit, throwIfRateLimited } from "./rate-limit.js";
 
 // User-Agent matters at the Cloudflare edge: a Chrome UA from Node gets
 // blocked on www.migros.ch. This Firefox/Linux UA (borrowed from
@@ -95,17 +95,7 @@ export async function silentOAuth(session: Session): Promise<string> {
     headers: uniformHeaders("www.migros.ch", session, { Accept: "application/json, text/plain, */*" }),
   });
   ingestSetCookie(session, "www.migros.ch", r.headers["set-cookie"]);
-  if (r.status === 429) {
-    const retryAfter = parseRetryAfter(r.headers["retry-after"] as string | undefined);
-    setRateLimited(session, retryAfter, "oauth/authorize -> 429");
-    throw new RateLimitError(
-      "login.migros.ch rate-limited (429) during silent OAuth authorize step. " +
-        "Retry after: " +
-        (retryAfter ?? "unknown") +
-        "s",
-      retryAfter
-    );
-  }
+  throwIfRateLimited(r, session, "silent OAuth authorize step");
   if (r.status !== 200) throw new Error("oauth/authorize -> " + r.status);
   const data = typeof r.data === "string" ? JSON.parse(r.data) : r.data;
   const ssoUrl: string | undefined = data?.url;
@@ -118,22 +108,12 @@ export async function silentOAuth(session: Session): Promise<string> {
     headers: uniformHeaders("login.migros.ch", session, { Accept: "text/html" }),
   });
   ingestSetCookie(session, "login.migros.ch", r.headers["set-cookie"]);
-  if (r.status === 429) {
-    const retryAfter = parseRetryAfter(r.headers["retry-after"] as string | undefined);
-    setRateLimited(session, retryAfter, "silent SSO -> 429");
-    throw new RateLimitError(
-      "login.migros.ch rate-limited (429) during silent SSO redirect. " +
-        "Retry after: " +
-        (retryAfter ?? "unknown") +
-        "s",
-      retryAfter
-    );
-  }
+  throwIfRateLimited(r, session, "silent SSO redirect");
   const location: string | undefined = r.headers.location;
   if (!location) {
     throw new Error("silent SSO did not redirect — login.migros.ch session likely expired");
   }
-  const u = new URL(location);
+  const u = new URL(location, ssoUrl);
   const code = u.searchParams.get("code");
   const state = u.searchParams.get("state");
   if (!code || !state) throw new Error("silent SSO redirected without code/state");
@@ -152,17 +132,7 @@ export async function silentOAuth(session: Session): Promise<string> {
     headers: uniformHeaders("www.migros.ch", session, { Accept: "application/json" }),
   });
   ingestSetCookie(session, "www.migros.ch", r.headers["set-cookie"]);
-  if (r.status === 429) {
-    const retryAfter = parseRetryAfter(r.headers["retry-after"] as string | undefined);
-    setRateLimited(session, retryAfter, "oauth/login-success -> 429");
-    throw new RateLimitError(
-      "login.migros.ch rate-limited (429) during OAuth login-success step. " +
-        "Retry after: " +
-        (retryAfter ?? "unknown") +
-        "s",
-      retryAfter
-    );
-  }
+  throwIfRateLimited(r, session, "OAuth login-success step");
   if (r.status !== 200) throw new Error("oauth/login-success -> " + r.status);
   const tokenBody = (typeof r.data === "string" ? JSON.parse(r.data) : r.data) as Record<string, unknown>;
   let token = (tokenBody.accessToken ?? tokenBody.access_token ?? tokenBody.token ?? null) as string | null;

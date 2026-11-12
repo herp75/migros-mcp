@@ -14,6 +14,7 @@ import path from "node:path";
 
 interface ListedTool {
   name: string;
+  title?: string;
   annotations?: Record<string, boolean>;
 }
 
@@ -104,5 +105,12 @@ describe("server", () => {
         assert.equal(typeof a.destructiveHint, "boolean", `${t.name} must say whether it is destructive`);
       assert.equal(a.openWorldHint, true, t.name);
     }
+  });
+
+  it("every tool has its own short title", () => {
+    for (const t of tools) {
+      assert.ok(t.title && t.title.length <= 40, `${t.name} needs a title of at most 40 characters`);
+    }
+    assert.equal(new Set(tools.map((t) => t.title)).size, tools.length, "two tools share a title");
   });
 });

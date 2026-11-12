@@ -25,7 +25,6 @@ export function formatCumulusProfile(data: Record<string, unknown> | null): stri
       memberships,
       isFamigrosMember: memberships.includes("FAMIGROS"),
       hint: "pointsBalance is the points collected in the current period.",
-      raw: data, // keep raw for the LLM in case it wants other fields
     },
     null,
     2
@@ -48,6 +47,11 @@ export async function getCumulusStatus(
   }
 }
 
+/** YYYY-MM-DD in Swiss time: in UTC, "today" is still yesterday until 1 or 2 am. */
+export function swissDate(d: Date): string {
+  return d.toLocaleDateString("en-CA", { timeZone: "Europe/Zurich" });
+}
+
 /**
  * List in-store receipts (Kassenbons) over a date range. Default range: last
  * 30 days. The supermarketOnly flag excludes online order invoices, so this
@@ -60,8 +64,8 @@ export async function getInStoreReceipts(
     limit?: number;
   } = {}
 ): Promise<string> {
-  const today = new Date().toISOString().slice(0, 10);
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+  const today = swissDate(new Date());
+  const thirtyDaysAgo = swissDate(new Date(Date.now() - 30 * 24 * 3600 * 1000));
   const startDate = args.startDate ?? thirtyDaysAgo;
   const endDate = args.endDate ?? today;
   const limit = args.limit ?? 50;
@@ -82,7 +86,7 @@ export async function getInStoreReceipts(
       receipts: list,
       hint:
         list.length > 0
-          ? "Use get_receipt_details with a receipt id to inspect line items."
+          ? "Line items aren't available here; get_receipt_details gives the link to see them on migros.ch."
           : `No in-store receipts in ${startDate} to ${endDate}.`,
     },
     null,
@@ -104,7 +108,7 @@ export async function getReceiptDetails(args: { receiptId: string | number }): P
     {
       receiptId: id,
       message:
-        "Full line items aren't accessible via the public API used by this MCP. Open the URL below in your browser to view the receipt details directly.",
+        "Line items aren't available to this server. Open the receipts page below on migros.ch and pick this receipt there (the link is the same for every receipt).",
       url: `https://account.migros.ch/purchases/receipts`,
       hint: "The receipt list (get_in_store_receipts) returns store, date, amount, and Cumulus points which is enough for most spending-analysis queries.",
     },
