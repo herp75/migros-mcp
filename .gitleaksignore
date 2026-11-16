@@ -1,0 +1,4 @@
+# The RFC 6238 test key (base32 of "12345678901234567890"), a public test
+# vector in tests/login-otp.test.ts, not a secret. Only this finding in this
+# commit is ignored; the same rule still applies everywhere else.
+cbd4704a870cfbb91c74762301c55d963fb316ba:tests/login-otp.test.ts:generic-api-key:12
