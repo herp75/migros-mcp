@@ -4,10 +4,10 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    # Give a new release two weeks before proposing it (supply-chain attacks
+    # Give a new release a week before proposing it (supply-chain attacks
     # are usually found and pulled within days).
     cooldown:
-      default-days: 14
+      default-days: 7
     groups:
       npm-minor-patch:
         update-types: [minor, patch]
@@ -16,7 +16,7 @@ updates:
     schedule:
       interval: weekly
     cooldown:
-      default-days: 14
+      default-days: 7
     groups:
       actions-minor-patch:
         update-types: [minor, patch]
@@ -25,4 +25,4 @@ updates:
     schedule:
       interval: weekly
     cooldown:
-      default-days: 14
+      default-days: 7
