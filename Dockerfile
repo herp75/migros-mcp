@@ -1,7 +1,7 @@
 # Base image pinned by digest; Dependabot keeps it up to date.
 
 # --- Build stage: compile TypeScript, then keep only the runtime dependencies ------------
-FROM node:24-alpine@sha256:116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5 AS build
+FROM node:25-alpine@sha256:bdf2cca6fe3dabd014ea60163eca3f0f7015fbd5c7ee1b0e9ccb4ced6eb02ef4 AS build
 
 WORKDIR /app
 COPY package.json package-lock.json tsconfig.json ./
@@ -10,7 +10,7 @@ COPY src ./src
 RUN npm run build && npm prune --omit=dev --ignore-scripts
 
 # --- Runtime stage: Node and the server, nothing else ------------------------------------
-FROM node:24-alpine@sha256:116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5
+FROM node:25-alpine@sha256:bdf2cca6fe3dabd014ea60163eca3f0f7015fbd5c7ee1b0e9ccb4ced6eb02ef4
 
 # Security fixes released after the base image was built; and no package managers at
 # runtime (npm, npx, corepack and yarn are not needed to run the server).
