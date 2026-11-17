@@ -59,3 +59,18 @@ export function redact(text: unknown): string {
 export function clearSecrets(): void {
   secrets.clear();
 }
+
+/**
+ * Text from Migros as plain text: no HTML tags, no angle brackets. Removing tags
+ * once can leave a new tag behind ("<scr<b>ipt>"), so repeat until nothing
+ * changes, then drop any stray bracket.
+ */
+export function plainText(html: string): string {
+  let text = html;
+  let previous;
+  do {
+    previous = text;
+    text = text.replace(/<[^<>]*>/g, "");
+  } while (text !== previous);
+  return text.replace(/[<>]/g, "");
+}

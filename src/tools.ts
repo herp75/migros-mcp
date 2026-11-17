@@ -13,6 +13,7 @@ import {
 } from "./migros.js";
 import { uidsNeedingOnlinePrice } from "./online.js";
 import { productIdsFromRecipe, recipeLanguage } from "./recipes.js";
+import { plainText } from "./security.js";
 
 export async function searchProducts(query: string, language: string): Promise<string> {
   const result = await apiSearchProducts(query, language);
@@ -137,8 +138,8 @@ function formatProduct(product: Record<string, unknown>): Record<string, unknown
   // Ingredients
   const ingredients = mainInfo?.ingredients ?? p.ingredients;
   if (ingredients) {
-    // Strip HTML tags
-    formatted.ingredients = (ingredients as string).replace(/<[^>]*>/g, "");
+    // Migros sends the ingredient list as HTML; pass it on as plain text.
+    formatted.ingredients = plainText(String(ingredients));
   }
 
   // Allergens
