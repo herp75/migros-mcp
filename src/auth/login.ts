@@ -4,6 +4,7 @@ import type { Session } from "./cookies.js";
 import { ingestSetCookie } from "./cookies.js";
 import { client, migrosUrl, uniformHeaders, silentOAuth } from "./oauth.js";
 import { throwIfRateLimited } from "./rate-limit.js";
+import { plainText } from "../security.js";
 
 export interface Credentials {
   email: string;
@@ -107,15 +108,7 @@ export function findError(html: unknown): string | null {
   // The Migros login form renders errors in a div with class "info-message-error".
   const m = html.match(/info-message-error[^>]*>[\s\S]*?<div[^>]*>([\s\S]{0,200})</);
   if (!m) return null;
-  // Plain text only. Removing tags once can leave a new tag behind
-  // ("<scr<b>ipt>"), so repeat until nothing changes, then drop any stray bracket.
-  let text = m[1];
-  let previous;
-  do {
-    previous = text;
-    text = text.replace(/<[^<>]*>/g, "");
-  } while (text !== previous);
-  return text.replace(/[<>]/g, "").replace(/\s+/g, " ").trim();
+  return plainText(m[1]).replace(/\s+/g, " ").trim();
 }
 
 /** The password only ever goes to the login host itself. */

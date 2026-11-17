@@ -11,7 +11,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import type { AxiosAdapter, InternalAxiosRequestConfig } from "axios";
-import { clearSecrets, MASK, redact, registerSecret } from "../src/security.js";
+import { clearSecrets, MASK, plainText, redact, registerSecret } from "../src/security.js";
 import { register } from "../src/register.js";
 import { credsFromEnv } from "../src/auth-tools/_shared.js";
 import { client, migrosUrl } from "../src/auth/oauth.js";
@@ -272,5 +272,18 @@ describe("session file", { skip: process.platform === "win32" }, () => {
     assert.equal(fs.statSync(configDir()).mode & 0o777, 0o700);
     assert.equal(fs.statSync(sessionFile()).mode & 0o777, 0o600);
     assert.deepEqual(loadSession().cookies, {});
+  });
+});
+
+describe("plainText", () => {
+  it("removes tags and keeps the text", () => {
+    assert.equal(plainText("Wasser, <b>Weizenmehl</b>, Salz"), "Wasser, Weizenmehl, Salz");
+  });
+
+  it("leaves no tag behind when tags are nested or broken", () => {
+    for (const html of ["<scr<b>ipt>alert(1)", "a <scr<script>ipt>b", "<<b>img src=x>", "x <b", "y >"]) {
+      const out = plainText(html);
+      assert.ok(!/[<>]/.test(out), `${html} -> ${out}`);
+    }
   });
 });
