@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format is based on 
 
 ### Fixed
 
+- The login, security and session tests failed on macOS from the second test on: their cleanup replaced `process.env` with a plain copy, and `os.homedir()` on macOS reads the real environment, so the safety check refused to touch a session file outside the temp dir. The cleanup now restores the environment in place, and the session tests remove their temp dirs. Found by the upstream maintainer in lewpgs/migros-mcp#19.
 - The ingredient list of `get_product_details` comes back as plain text even when Migros's HTML has nested or broken tags (`<scr<b>ipt>`): tags are removed until none are left, the same way the login already handles its error messages (CodeQL js/incomplete-multi-character-sanitization).
 - The weekly live check could refuse a correctly signed image as unsigned: podman lists the multi-arch index and the platform image in no fixed order, and only the index is signed. It now looks up the index digest in the registry (needs skopeo) and pulls exactly that.
 

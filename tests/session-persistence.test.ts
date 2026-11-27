@@ -10,7 +10,7 @@
  * user config dir is never touched.
  */
 
-import { describe, it, beforeEach } from "node:test";
+import { describe, it, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
@@ -19,6 +19,7 @@ import { loadSession, saveSession, type Session } from "../src/auth/cookies.js";
 import { sessionFile } from "../src/auth/paths.js";
 
 let tmpConfig: string;
+const savedEnv = { ...process.env };
 
 beforeEach(() => {
   tmpConfig = fs.mkdtempSync(path.join(os.tmpdir(), "migros-session-test-"));
@@ -31,6 +32,15 @@ beforeEach(() => {
     sessionFile().startsWith(tmpConfig),
     "refusing to run: session file would be written outside the temp dir: " + sessionFile()
   );
+});
+
+afterEach(() => {
+  // Restore the environment in place. Reassigning process.env would swap Node's
+  // real environment for a plain object: os.homedir() on macOS reads the real
+  // one, so later tests would no longer use their temp dir.
+  for (const key of Object.keys(process.env)) if (!(key in savedEnv)) delete process.env[key];
+  Object.assign(process.env, savedEnv);
+  fs.rmSync(tmpConfig, { recursive: true, force: true });
 });
 
 describe("session cooldown persistence", () => {
