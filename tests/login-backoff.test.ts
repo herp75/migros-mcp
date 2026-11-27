@@ -53,7 +53,11 @@ beforeEach(() => {
 afterEach(() => {
   client().defaults.adapter = undefined;
   resetLoginBackoff();
-  process.env = { ...savedEnv };
+  // Restore the environment in place. Reassigning process.env would swap Node's
+  // real environment for a plain object: os.homedir() on macOS reads the real
+  // one, so later tests would no longer use their temp dir.
+  for (const key of Object.keys(process.env)) if (!(key in savedEnv)) delete process.env[key];
+  Object.assign(process.env, savedEnv);
   fs.rmSync(tmpConfig, { recursive: true, force: true });
 });
 
